@@ -15,7 +15,9 @@ This is the C source code for a modular preamplifier, so the features depend a l
 ## Links
 
 [PreAmplifier project page](http://www.djuke.nl/en/projects/10-pre-amplifiers/34-preamplifierv2)
+
 [PreAmplifier products](http://www.djuke.nl/index.php?page=shop.browse&category_id=67&vmcchk=1&option=com_virtuemart&Itemid=8)
+
 [PreAmplifier support pages](http://www.djuke.nl/en/support/15-preamplifier)
 
 ## Building
@@ -52,7 +54,6 @@ Release date: 2016-02-15
 - Support for (chained) 8channel VolumeControl pcbs (up to 24 channels)
 - Display title from UART
 - Increased number of DAC inputs to 5 (to be used by Raspberry Pi)
-- 
 
 ### version 1.0
 Release date: 2016-04-18
