@@ -1,9 +1,12 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
+
+# Class for connecting to Volumio and retrieving its playback status.
+# You can define callback function that are called on a change of status, title, artist
+#
+# Uses socketIO-client for connecting to Volumio and retrieving the status: https://pypi.org/project/socketIO-client/
 
 from socketIO_client import SocketIO, LoggingNamespace
-#from socketIO_client import SocketIO
 
-# Class for connecting to Volumio
 class VolumioClient(object):
     def __init__(self, host="localhost", port=3000):
         self._host = host
@@ -62,7 +65,7 @@ if __name__ == "__main__":
 
     # Define callback functions
     def status_changed(new_status):
-	global status
+        global status
         print('status_changed() status: ' +  status + '->' + new_status)
         status = new_status
 
