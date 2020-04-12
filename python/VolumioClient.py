@@ -30,22 +30,25 @@ class VolumioClient(object):
 
     # Callback function as response on 'getState', used to retrieve status, title, artist
     def on_push_state(self, *args):
-    #    print('getstate', args)
-        new_status = args[0]['status']
-        if new_status != self._status:
-            if self._status_change_callback:
-                self._status_change_callback(new_status)
-            self._status = new_status
-        new_title = args[0]['title']
-        if new_title != self._title:
-            if self._title_change_callback:
-                self._title_change_callback(new_title)
-            self._title = new_title
-        new_artist = args[0]['artist']
-        if new_artist != self._artist:
-            if self._artist_change_callback:
-                self._artist_change_callback(new_artist)
-            self._artist = new_artist
+#        print('getstate', args)
+        if 'artist' in args[0]:
+            new_artist = args[0]['artist']
+            if new_artist != self._artist:
+                if self._artist_change_callback:
+                    self._artist_change_callback(new_artist)
+                self._artist = new_artist
+        if 'title' in args[0]:
+            new_title = args[0]['title']
+            if new_title != self._title:
+                if self._title_change_callback:
+                    self._title_change_callback(new_title)
+                self._title = new_title
+        if 'status' in args[0]:
+            new_status = args[0]['status']
+            if new_status != self._status:
+                if self._status_change_callback:
+                    self._status_change_callback(new_status)
+                self._status = new_status
 
     def connect(self):
         self._socketio = SocketIO(self._host, self._port, LoggingNamespace)
@@ -60,6 +63,7 @@ class VolumioClient(object):
 
 if __name__ == "__main__":
     import sys
+    import unicodedata
 
     status = 'unknown'
 
@@ -70,10 +74,10 @@ if __name__ == "__main__":
         status = new_status
 
     def title_changed(title):
-        print('title_changed(): ' + title)
+        print('title_changed(): ' + unicodedata.normalize("NFD", title).encode('ascii', 'ignore'))
 
     def artist_changed(artist):
-        print('artist_changed(): ' + artist)
+        print('artist_changed(): ' + unicodedata.normalize("NFD", artist).encode('ascii', 'ignore'))
 
     try:
         volumio = VolumioClient(host="localhost", port=3000)
