@@ -71,3 +71,8 @@ Release date: 2016-12-21
 - Added 'spare' to list of inputs
 - Defined input names as array to save space
 
+### version 1.2
+Release date: 2020-04-13
+- Increased speed of title scrolling to about 4 characters/s
+- Limited max master 1/2/3 volume to +3dB
+
