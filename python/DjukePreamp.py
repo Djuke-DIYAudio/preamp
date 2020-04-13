@@ -71,19 +71,19 @@ try:
         global status, title
         print('status_changed(): ' + status + ' -> ' + new_status)
         logger.info('status_changed(): ' + status + ' -> ' + new_status)
-        if new_status == 'stop' and status == 'play':
+        if new_status == 'stop':
             logger.info("player stopped, remove preamp title")
             preamp.write("input set 9")
-        if new_status == 'pause' and status == 'play':
+        if new_status == 'pause':
             logger.info("player paused, remove preamp title")
             preamp.write("input set 9")
-        if new_status == 'play' and (status == 'pause' or status == 'stop'):
-# Optionally, switch on the preamp first
-#            logger.info("Player started, power on preamp")
-#            preamp.write("power on")
-#            time.sleep(1);
-            logger.info("Set preamp input to 9: Mediaplayer")
-            preamp.write("input set 9")
+        if new_status == 'play':
+            # Optionally, switch on the preamp first, if playback just started
+            if status == 'stop':
+#                logger.info("Player started, power on preamp")
+#                preamp.write("power on")
+                logger.info("Set preamp input to 9: Mediaplayer")
+                preamp.write("input set 9")
             time.sleep(1);
             logger.info("Set preamp title to: " + title)
             preamp.write("title 9 " + title)
