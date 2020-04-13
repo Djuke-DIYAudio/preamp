@@ -25,6 +25,7 @@ import time
 import sys
 from VolumioClient import VolumioClient
 from PreampClient import PreampClient
+import unicodedata
 
 import logging
 import logging.handlers
@@ -61,6 +62,7 @@ try:
     preamp = PreampClient(logname="DjukePreamp-serial.log")
     preamp.open()
 
+    # Global variables with initial status and title
     status = 'unknown'
     title = 'unknown'
 
@@ -91,7 +93,10 @@ try:
 
     def title_changed(new_title):
         global status, title
-        title = new_title
+        # Convert title to ascii, while trying to maintain readable titles
+        title = unicodedata.normalize("NFD", new_title).encode('ascii', 'ignore')
+        # Truncate to max 70 characters
+        title = title[:70]
         print('title_changed(): ' + title)
         logger.info('title_changed(): ' + title)
         if status == 'play':
