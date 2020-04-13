@@ -60,7 +60,7 @@ logger.addHandler(handler)
 
 try:
     preamp = PreampClient(logname="DjukePreamp-serial.log")
-    preamp.open()
+#    preamp.open()
 
     # Global variables with initial status and title
     status = 'unknown'
@@ -78,28 +78,23 @@ try:
             logger.info("player paused, remove preamp title")
             preamp.write("input set 9")
         if new_status == 'play':
-            # Optionally, switch on the preamp first, if playback just started
+            # Optionally, switch on the preamp first, if playback just started, or set the input
             if status == 'stop':
 #                logger.info("Player started, power on preamp")
 #                preamp.write("power on")
                 logger.info("Set preamp input to 9: Mediaplayer")
                 preamp.write("input set 9")
-            time.sleep(1);
-            logger.info("Set preamp title to: " + title)
-            preamp.write("title 9 " + title)
-
         status = new_status
-
 
     def title_changed(new_title):
         global status, title
-        # Convert title to ascii, while trying to maintain readable titles
-        title = unicodedata.normalize("NFD", new_title).encode('ascii', 'ignore')
-        # Truncate to max 70 characters
-        title = title[:70]
-        print('title_changed(): ' + title)
-        logger.info('title_changed(): ' + title)
         if status == 'play':
+            # Convert title to ascii, while trying to maintain readable titles
+            title = unicodedata.normalize("NFD", new_title).encode('ascii', 'ignore')
+            # Truncate to max 70 characters
+            title = title[:70]
+            print('title_changed(): ' + title)
+            logger.info('title_changed(): ' + title)
             logger.info("Set preamp title to: " + title)
             preamp.write("title 9 " + title)
 
