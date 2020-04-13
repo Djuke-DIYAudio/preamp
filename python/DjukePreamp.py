@@ -60,7 +60,7 @@ logger.addHandler(handler)
 
 try:
     preamp = PreampClient(logname="DjukePreamp-serial.log")
-#    preamp.open()
+    preamp.open()
 
     # Global variables with initial status and title
     status = 'unknown'
