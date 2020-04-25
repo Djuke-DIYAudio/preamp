@@ -31,8 +31,8 @@ import logging
 import logging.handlers
 
 # Logging parameter
-#LOG_FILENAME = "/var/log/DjukePreamp.log"
-LOG_FILENAME = "DjukePreamp.log"
+LOG_FILENAME = "/var/log/DjukePreamp.log"
+#LOG_FILENAME = "DjukePreamp.log"
 
 # Configure logging to log to a file, making a new file at midnight and keeping the last 3 day's data
 # Give the logger a unique name (good practice)
@@ -59,7 +59,7 @@ logger.addHandler(handler)
 #logger.addHandler(stderr_handler)
 
 try:
-    preamp = PreampClient(logname="DjukePreamp-serial.log")
+    preamp = PreampClient(logname="/var/log/DjukePreamp-serial.log")
     preamp.open()
 
     # Global variables with initial status and title

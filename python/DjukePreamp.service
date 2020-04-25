@@ -5,7 +5,7 @@ After=network.target sound.target mpd.service
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/bin/python3 /usr/local/bin/DjukePreamp.py
+ExecStart=/usr/bin/env python /usr/local/Djuke/DjukePreamp.py
 Restart=always
 RestartSec=3
 
