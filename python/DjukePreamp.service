@@ -1,0 +1,13 @@
+[Unit]
+Description=DjukePreamp service
+After=network.target sound.target mpd.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /usr/local/bin/DjukePreamp.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
