@@ -1,0 +1,6 @@
+*.o
+*.asm
+*.lst
+*.cod
+*.cof
+*.map

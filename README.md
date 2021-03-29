@@ -1,4 +1,4 @@
-# Djuke - PreAmplifier v2.0
+# PreAmplifier project
 
 This is the C source code for a modular preamplifier, so the features depend a lot on the different pcb's that are used. The heart of the preamp is the PreampController pcb, which connects the other pcb's, display, buttons, encoder, infrared receiver, etc. Other sensible configurations are:
 
@@ -9,20 +9,22 @@ This is the C source code for a modular preamplifier, so the features depend a l
  - Stereo input selection + volume control
  - Stereo + 5.1 input selection + volume control
  - Stereo input selection + DAC + volume control
- - Stereo +5.1 input selection + DAC + volume control
+ - Stereo + 5.1 input selection + DAC + volume control
  - DAC + volume control
 
 ## Links
 
 [PreAmplifier project page](http://www.djuke.nl/en/projects/10-pre-amplifiers/34-preamplifierv2)
 
-[PreAmplifier products](http://www.djuke.nl/index.php?page=shop.browse&category_id=67&vmcchk=1&option=com_virtuemart&Itemid=8)
+[PreAmplifier products](https://webshop.djuke.nl/index.php?route=product/category&path=60_68)
 
 [PreAmplifier support pages](http://www.djuke.nl/en/support/15-preamplifier)
 
 ## Building
 
-Building the software is done in Linux and requires SDCC (small device C Compiler) to be installed. From the source code directory, simply run:
+Building the software is done in Linux and requires SDCC (small device C Compiler) to be installed. Because the non-free pic16 is typically not included in SDCC from major Linux distributions it is advised to download it from the [SDCC homepage](http://sdcc.sourceforge.net)
+
+From the source code directory, simply run:
 
 ```
 make
@@ -75,4 +77,3 @@ Release date: 2016-12-21
 Release date: 2020-04-13
 - Increased speed of title scrolling to about 4 characters/s
 - Limited max master 1/2/3 volume to +3dB
-
