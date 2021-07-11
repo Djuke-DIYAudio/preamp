@@ -32,8 +32,8 @@ unsigned char spi_wait_for_interrupt();
 
 // hardware
 unsigned char encoder_counter_changed();
-char get_encoder_diff();
-signed char enc_update();
+unsigned char get_encoder_counter();
+signed char get_encoder_diff();
 char button_power();
 char button_power_pressed();
 char button_menu();
@@ -122,8 +122,8 @@ void power_on();
 #define IR_DIRECTION		TRISBbits.TRISB0
 
 // Display
-#define LCD_RS			PORTEbits.RE0 
-#define LCD_RS_DIRECTION	TRISEbits.TRISE0 
+#define LCD_RS			PORTEbits.RE0
+#define LCD_RS_DIRECTION	TRISEbits.TRISE0
 #define LCD_RW			PORTEbits.RE1
 #define LCD_RW_DIRECTION	TRISEbits.TRISE1
 #define LCD_E			PORTEbits.RE2

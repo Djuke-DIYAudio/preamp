@@ -1,16 +1,16 @@
 #ifndef MENU_H
 #define MENU_H
 
-#define MAX_TITLE       20
+#define MAX_MENU_TITLE       20
 #define MAX_SUBMENUS    10
 
 typedef struct menu_t
 {
-    char title[MAX_TITLE];
+    char title[MAX_MENU_TITLE];
     unsigned char (*nr_items)();		// Pointer to function returning number of items
     const char * (*item_line1)(unsigned char);	// Pointer to function returning line1 of item
     const char * (*item_line2)(unsigned char);	// Pointer to function returning line2 of item
-    void (*item_change)(unsigned char, char);	// Pointer to function used to change item
+    void (*item_change)(unsigned char, signed char);	// Pointer to function used to change item
     void (*item_toggle)(unsigned char);	        // Pointer to function used to toggle item
     unsigned char nr_submenus;
     const struct menu_t *submenu[MAX_SUBMENUS];
@@ -49,7 +49,7 @@ void menu_right();
 void menu_select();
 void menu_exit();
 void menu_main();
-void menu_change(char value);
+void menu_change(signed char value);
 void display_menu();
 
 char menu_hw_setup();			// Go to the HW setup menu

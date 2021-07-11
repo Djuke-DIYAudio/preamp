@@ -41,7 +41,7 @@ make clean
 ### version 0.9
 Release date: 2016-02-15
 - Interrupt based infrared
-- Visualisation if input level
+- Visualisation of input level
 - Detection of elapsed time without signal
 - Support different hardware setups
 - Loading/saving from/to eeprom
@@ -77,3 +77,11 @@ Release date: 2016-12-21
 Release date: 2020-04-13
 - Increased speed of title scrolling to about 4 characters/s
 - Limited max master 1/2/3 volume to +3dB
+
+### version 1.3
+Release date: 2021-07-02
+- Reduce sensitivity of encoder in HW setup
+- Input names in alphabetic order
+- Fix title display in menu
+- Make (un)signed datatypes explicit to allow compilation with recent SDCC
+- Fix mute state during power on

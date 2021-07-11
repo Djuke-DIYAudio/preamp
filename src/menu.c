@@ -12,11 +12,12 @@
 #include "terminal.h"
 
 #define INACTIVE_SECONDS_LIMIT		20 // Return after 20s of inactivity
+#define MAX_TITLE                 35
 
 // Current menu selection
 static const menu_t *current_menu = NULL;
 static unsigned char menu_idx = 0;
-static char _title[35] = "";
+static char _title[MAX_TITLE] = "";
 static unsigned char _title_input = 0;
 static unsigned char _show_title = 0;
 static unsigned char _title_idx = 0;
@@ -106,7 +107,7 @@ void menu_left()
 		nr_items = current_menu->nr_items();
 		if (nr_items) {	// Menu has sub items
 			if (menu_idx > 0) menu_idx--;
-			else menu_idx = nr_items-1;		
+			else menu_idx = nr_items-1;
 	}
 
 	display_menu();
@@ -124,7 +125,7 @@ void menu_right()
 		nr_items = current_menu->nr_items();
 		if (nr_items) {	// Menu has sub items
 			if (menu_idx < nr_items-1) menu_idx++;
-			else menu_idx = 0;		
+			else menu_idx = 0;
 	}
 
 	display_menu();
@@ -163,7 +164,7 @@ void menu_select()
 	display_menu();
 }
 
-void menu_change(char value)
+void menu_change(signed char value)
 {
 	unsigned char nr_items;
 
@@ -197,7 +198,7 @@ void display_menu()
 		return;
 	}
 
-	if (current_menu->nr_items != NULL && 
+	if (current_menu->nr_items != NULL &&
 	    current_menu->item_line1 != NULL &&
 	    current_menu->item_line2 != NULL) { // Menu with items
 		nr_items = current_menu->nr_items();
@@ -211,7 +212,7 @@ void display_menu()
 		LCD_puts(current_menu->item_line1(menu_idx));
 		LCD_row2();
 		LCD_puts(current_menu->item_line2(menu_idx));
-	}	
+	}
 }
 
 static const char *input_offsets_line1(unsigned char item)
@@ -221,7 +222,7 @@ static const char *input_offsets_line1(unsigned char item)
 	return string;
 }
 
-static const char *input_offsets_line2(unsigned char item) 
+static const char *input_offsets_line2(unsigned char item)
 {
 	const char string[21];
 	if (get_input_offset(item) < 0)
@@ -240,7 +241,7 @@ static const char *input_names_line1(unsigned char item)
 	return string;
 }
 
-static const char *input_names_line2(unsigned char item) 
+static const char *input_names_line2(unsigned char item)
 {
 	const char string[21];
 	sprintf(string, "Name: %s", input_name_string(item));
@@ -254,7 +255,7 @@ static const char *channel_offsets_line1(unsigned char item)
 	return string;
 }
 
-static const char *channel_offsets_line2(unsigned char item) 
+static const char *channel_offsets_line2(unsigned char item)
 {
 	const char string[21];
 	if (get_channel_offset(item) < 0)
@@ -399,7 +400,7 @@ static void display_menu_settings(unsigned char item)
 	LCD_row2_clear();
 	LCD_row2();
 
-	if (item==0) sprintf(string, "Load settings?"); 
+	if (item==0) sprintf(string, "Load settings?");
 	else if (item==1) sprintf(string, "Save settings?");
 
 	LCD_putc('<'); // sign <
@@ -415,6 +416,7 @@ char menu_hw_setup()
 {
 	unsigned char menu_item = 0, max_item;
 	signed char value_change;
+	static unsigned char prev_encoder_counter;
 
 	LCD_display("Enter HW setup..", 0x00, 1, INFO);
 	delay_s(1);
@@ -424,21 +426,24 @@ char menu_hw_setup()
 	LCD_puts("Hardware setup");
 	max_item = get_nr_hw_setups()-1;		// Number of HW setups
 	display_menu_hw_setup(menu_item);	// Display the newly selected item
+
+	prev_encoder_counter = get_encoder_counter();
 	while(1)
 	{
-		value_change = get_encoder_diff();
-		if (value_change) {
+		value_change = get_encoder_counter() - prev_encoder_counter;
+		if (value_change / 2) {
+      prev_encoder_counter = get_encoder_counter();
 			toggle_hw_setup(menu_item);
 			display_menu_hw_setup(menu_item);
-		}	
+		}
 		if (button_menu_pressed()) return -1;
 		if (button_power_pressed()) return -1;
 		if (button_left_pressed()) { if (menu_item > 0) menu_item--; else menu_item = max_item; display_menu_hw_setup(menu_item); }
 		if (button_right_pressed()) { if (menu_item < max_item) menu_item++; else menu_item = 0; display_menu_hw_setup(menu_item); }
-		if (button_select_pressed()) { 
+		if (button_select_pressed()) {
 			if (menu_item < max_item) { menu_item++; display_menu_hw_setup(menu_item); }
 			else { default_settings(); return -1; }
-			
+
 		}
 	}
 }
@@ -475,8 +480,8 @@ void display_volume(unsigned char full_update)		// Display volume
 
 	if (!has_volume_control()) return;	// Do not display if volume can not be controlled
 
-	if (full_update || headphones_connected_changed() 
-			|| input_mode != get_current_input_mode() 
+	if (full_update || headphones_connected_changed()
+			|| input_mode != get_current_input_mode()
 			|| output_mode != get_current_output_mode()) {
 		input_mode = get_current_input_mode();
 		output_mode = get_current_output_mode();
@@ -561,7 +566,7 @@ void display_input(unsigned char full_update)		// Display input
 void set_title(unsigned char input, char *title)		// Display title
 {
 	_title_input = input;
-	strcpy(_title, title);
+	strncpy(_title, title, MAX_TITLE-1);
 
 	_show_title = 1;
 	_title_idx = 0;
@@ -578,7 +583,8 @@ void display_title()
 
 	if (!_show_title || !is_powered()) return;
 	if (_title_input != get_input()) return;
-
+  if (in_menu()) return;
+  
 	// Scroll text if title is longer than 13 characters
 	len = strlen(_title);
 	if (len > 13) {

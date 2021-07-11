@@ -50,7 +50,7 @@ void set_settings_saved(char saved);
 unsigned char get_checksum();
 
 // Input related functions
-char is_enabled(unsigned char input);
+unsigned char is_enabled(unsigned char input);
 void toggle_enabled(unsigned char input);
 unsigned char nr_inputs();				// Get number of inputs
 unsigned char get_input_type();				// Get current input type
@@ -61,36 +61,36 @@ void set_input(unsigned char val);			// Set current input
 unsigned char next_input();				// Select next input
 unsigned char previous_input();				// Select previous input
 unsigned char input_changed();				// Has input changed since previous call
-char is_dac_input();
-char is_analog_input();
+unsigned char is_dac_input();
+unsigned char is_analog_input();
 const char *input_type_string(unsigned char input);
-signed char get_current_input_type();			// Get type of current input
+unsigned char get_current_input_type();			// Get type of current input
 const char *input_name_string(unsigned char input);
-void change_input_name(unsigned char input, char change);	// Select different name for input
-signed char get_input_offset(unsigned char input);	// Get offset of input
-void add_input_offset(unsigned char input, char offset);		// Add value to input offset
+void change_input_name(unsigned char input, signed char change);	// Select different name for input
+int8_t get_input_offset(unsigned char input);	// Get offset of input
+void add_input_offset(unsigned char input, int8_t offset);		// Add value to input offset
 unsigned char get_current_input_mode();			// Get current input mode
 unsigned char get_current_output_mode();		// Get current output mode
 void set_current_output_mode(unsigned char channels);	// Set current output mode
 unsigned char next_output_mode();			// Select next output mode
 
 // Volume related functions
-short get_volume();				// Get global volume
-void set_volume(short vol);			// Set global volume
-void add_volume(char val);			// Add val to global volume
+int16_t  get_volume();				// Get global volume
+void set_volume(int16_t vol);			// Set global volume
+void add_volume(int8_t val);			// Add val to global volume
 const char *volume_string();			// returns volume string
-unsigned char has_volume_control();		// Indicates whether volume control is used 
+unsigned char has_volume_control();		// Indicates whether volume control is used
 unsigned char has_signal_level();		// Indicates whether signal level is measured
 unsigned char has_headphones();        // Indicates whether headphones input is used
 
 // Channel related functions
 unsigned char nr_channels();				// Get number of channels
 unsigned char get_nr_output_channels();			// Get current number of output channels
-short get_channel_offset(unsigned char channel);	// Get offset of channel
-void add_channel_offset(unsigned char channel, char offset);	// Add value to channel offset
-void set_channel_offset(unsigned char channel, short offset);	// Set channel offset
-signed char get_current_input_offset();			// Get offset of current input
-signed char get_output_mode_offset(unsigned char channel);	// Get channel offset of current output mode
+int8_t get_channel_offset(unsigned char channel);	// Get offset of channel
+void add_channel_offset(unsigned char channel, int8_t offset);	// Add value to channel offset
+void set_channel_offset(unsigned char channel, int8_t offset);	// Set channel offset
+int8_t get_current_input_offset();			// Get offset of current input
+int8_t get_output_mode_offset(unsigned char channel);	// Get channel offset of current output mode
 const char *channel_name_string(unsigned char channel);
 const char *surround_mode_string(unsigned char mode);
 const char *input_channel_string();
@@ -98,9 +98,9 @@ const char *output_channel_string();
 const char *channel_string(unsigned char channels);
 
 // Parameter related functions
-signed short get_parameter(unsigned char par);			// Get parameter value
-void set_parameter(unsigned char par, short value);	// Set parameter value
-void change_parameter(unsigned char par, char change);	// Change parameter value
+int16_t get_parameter(unsigned char par);			// Get parameter value
+void set_parameter(unsigned char par, int16_t value);	// Set parameter value
+void change_parameter(unsigned char par, int8_t change);	// Change parameter value
 const char *get_parameter_name(unsigned char par);		// Get parameter name
 const char *get_parameter_cmd_name(unsigned char par);		// Get parameter command name
 const char *get_parameter_unit(unsigned char par);		// Get parameter unit
@@ -125,26 +125,23 @@ enum HW_SETUP {
 };
 
 enum NAME {
-	CD = 0,
-	DVD,
-	RECEIVER,
-	TUNER,
-	COMPUTER,
-	LAPTOP,
-	TV,
-	DIGTV,
+	AUDIOCAST = 0,
+	AUX,
+	BLURAY,
 	CABLE,
+	CD,
+	COMPUTER,
+	DVD,
+	HTPC,
+	MPLAYER,
+	PHONO,
+	RECEIVER,
 	SAT,
 	TAPE,
+	TV,
+	TUNER,
+	TVRECEIVER,
 	VIDEO,
-	AUX,
-	PHONO,
-	HDREC,
-	DVR,
-	HTPC,
-	BLURAY,
-	MPLAYER,
-	SPARE,
 	NR_INPUT_NAMES
 };
 
@@ -171,13 +168,13 @@ enum TYPE {
 //Type definitions
 typedef struct
 {
-	int16_t offset;				// Channel offset (in half dB steps)
+	int8_t offset;				// Channel offset (in half dB steps)
 } channel_t;
 
 typedef struct
 {
-	int16_t offset;				// Input offset (in half dB steps)
-	signed char enabled;			// Is input enabled?
+	int8_t offset;				// Input offset (in half dB steps)
+	unsigned char enabled;			// Is input enabled?
 	unsigned char analog_select;		// Value to select the analog input
 	unsigned char dac_select;		// Value to select the DAC input
 	unsigned char name;			// input name
@@ -188,7 +185,7 @@ typedef struct
 
 typedef struct
 {
-	signed short value;
+	int16_t value;
 } parameter_t;
 
 typedef struct
@@ -197,21 +194,21 @@ typedef struct
 	channel_t channel[MAX_CHANNELS];		// Channel information
 	input_t input[MAX_INPUTS];			// Input information
 	unsigned char nr_inputs;			// Number of inputs
-	char use_dac_pcb;				// Use DAC pcb
-	char use_inputselect_pcb;			// Use Input select pcb
-	char use_multi_input_pcb;			// Use 5.1 input pcb
-	char use_cs3318_volumecontrol_pcb;		// Use Volume control pcb
-	char cs3318_type;		            // Volume control type (0=normal, 1=1x8ch, 2=2x8ch)
+	unsigned char use_dac_pcb;				// Use DAC pcb
+	unsigned char use_inputselect_pcb;			// Use Input select pcb
+	unsigned char use_multi_input_pcb;			// Use 5.1 input pcb
+	unsigned char use_cs3318_volumecontrol_pcb;		// Use Volume control pcb
+	unsigned char cs3318_type;		            // Volume control type (0=normal, 1=1x8ch, 2=2x8ch)
 } settings_t;
 
 // Global state
 typedef struct
 {
-	char powered;					// Current power state
-	char muted;					// Curent mute state
-	signed short volume;				// Global volume (in half dB steps)
+	unsigned char powered;					// Current power state
+	unsigned char muted;					// Curent mute state
+	int16_t volume;				// Global volume (in half dB steps)
 	unsigned char current_input;			// Currently selected input
-	char settings_saved;				// Settings saved state
+	unsigned char settings_saved;				// Settings saved state
 	unsigned char checksum;				// Settings checksum
 } state_t;
 

@@ -19,38 +19,35 @@ volatile settings_t _settings;
 
 // Preamp info
 const char *preamp_name() { return "Djuke PreAmplifier"; }
-const char *preamp_version() { return "v1.2"; }
-const char *preamp_date() { return "28 nov 2017"; }
+const char *preamp_version() { return "v1.3"; }
+const char *preamp_date() { return "9 jul 2021"; }
 
 // Input names
 const char input_names[][13] =
 {
-	"CD Player",
-	"DVD Player",
-	"Receiver",
-	"Tuner",
-	"Computer",
 	"Audio Cast",
-	"Television",
-	"Digital TV", 
+	"Auxillary",
+	"Blu-Ray",
 	"Cable",
+	"CD Player",
+	"Computer",
+	"DVD Player",
+	"HTPC",
+	"Media Player",
+	"Phono",
+	"Receiver",
 	"Satellite",
 	"Tape",
-	"Video",
-	"Auxillary",
-	"Phono",
-	"HDTV Record",
-	"DVR",
-	"HTPC",
-	"Blu-Ray",
-	"Media Player",
-	"Spare"
+	"Television",
+	"Tuner",
+	"TV Receiver",
+	"Video"
 };
 
 void update_volume()
 {
-	short volume;
-	signed char offset = get_input_offset(get_input());
+	uint16_t volume;
+	uint8_t offset = get_input_offset(get_input());
 	volume = get_volume() + offset;
 
 	if (get_input() > nr_inputs() || is_muted() || !is_powered()) {
@@ -121,17 +118,17 @@ void toggle_hw_setup(unsigned char hw_setup) {
 	}
 }
 
-char settings_saved() { return _state.settings_saved; }
-void set_settings_saved(char saved) { _state.settings_saved = saved; }
-char is_powered() { return _state.powered; }
-void set_powered(char val) { _state.powered = val; }
-char is_muted() { return _state.muted; }
-void set_muted(char val) { 
-	_state.muted = val; 
+unsigned char settings_saved() { return _state.settings_saved; }
+void set_settings_saved(unsigned char saved) { _state.settings_saved = saved; }
+unsigned char is_powered() { return _state.powered; }
+void set_powered(unsigned char val) { _state.powered = val; }
+unsigned char is_muted() { return _state.muted; }
+void set_muted(unsigned char val) {
+	_state.muted = val;
 	update_volume();
 	display_volume(0);
 }
-char is_enabled(unsigned char input) { return _settings.input[input].enabled; }
+unsigned char is_enabled(unsigned char input) { return _settings.input[input].enabled; }
 
 void toggle_enabled(unsigned char input) {
 	if (_settings.input[input].enabled) _settings.input[input].enabled = 0;
@@ -172,7 +169,7 @@ unsigned char next_input() {
 	unsigned char start_input = get_input();
 	unsigned char new_input = start_input;
 
-	if (!is_powered()) return;
+	if (!is_powered()) return start_input;
 
 	do {
 		new_input++;
@@ -186,7 +183,7 @@ unsigned char previous_input() {
 	unsigned char start_input = get_input();
 	unsigned char new_input = start_input;
 
-	if (!is_powered()) return;
+	if (!is_powered()) return start_input;
 
 	do {
 		if (new_input > 0) new_input--;
@@ -208,24 +205,24 @@ unsigned char input_changed() {
 	}
 }
 
-char is_dac_input() {
+unsigned char is_dac_input() {
 	unsigned char type = get_input_type();
 	if (type >= DAC1 && type <= DAC8) return 1;
 	else return 0;
 }
 
-char is_analog_input() {
+unsigned char is_analog_input() {
 	unsigned char type = get_input_type();
 	if (type >= ANALOG1 && type <= ANALOG8) return 1;
 	else return 0;
 }
 
 
-short get_volume() {
+int16_t get_volume() {
 	return _state.volume;
 }
 
-void set_volume(short vol) {
+void set_volume(signed short vol) {
 	_state.muted = 0;	// Unmute after changing volume
 	if (vol > MAX_VOLUME) vol = MAX_VOLUME;
 	if (vol < MIN_VOLUME) vol = MIN_VOLUME;
@@ -234,7 +231,7 @@ void set_volume(short vol) {
    display_volume(0);
 }
 
-void add_volume(char val) {
+void add_volume(signed char val) {
 	short vol;
 	vol = _state.volume + val;
    set_volume(vol);
@@ -275,7 +272,7 @@ unsigned char has_headphones() {
 	else return 0;
 }
 
-unsigned char nr_channels() { 
+unsigned char nr_channels() {
 	if (_settings.use_cs3318_volumecontrol_pcb) return volumecontrol_get_nr_channels();
 	else if (_settings.use_dac_pcb) return dac_get_nr_channels();
 	else if (_settings.use_multi_input_pcb) return 6;
@@ -289,22 +286,22 @@ unsigned char get_nr_output_channels() {
 	else return 0;
 }
 
-short get_channel_offset(unsigned char channel) {
-	short offset;
+int8_t get_channel_offset(unsigned char channel) {
+	int8_t offset;
 	if (channel >= nr_channels()) return 0;
 	offset = _settings.channel[channel].offset;
 //	offset += get_output_mode_offset(channel);
 	return offset;
 }
 
-void add_channel_offset(unsigned char channel, char offset) {
-	short new_offset;
+void add_channel_offset(unsigned char channel, int8_t offset) {
+	int8_t new_offset;
 	if (channel >= nr_channels()) return;
 	new_offset = _settings.channel[channel].offset + offset;
 	set_channel_offset(channel, new_offset);
 }
 
-void set_channel_offset(unsigned char channel, short offset) {
+void set_channel_offset(unsigned char channel, int8_t offset) {
 	if (_settings.use_cs3318_volumecontrol_pcb) {
 		volumecontrol_set_channel_offset(channel, offset);
 		_settings.channel[channel].offset = volumecontrol_get_channel_offset(channel);
@@ -317,10 +314,10 @@ void set_channel_offset(unsigned char channel, short offset) {
 	}
 }
 
-signed char get_current_input_offset() { return _settings.input[get_input()].offset; }
-signed char get_input_offset(unsigned char input) { return _settings.input[input].offset; }
+int8_t get_current_input_offset() { return _settings.input[get_input()].offset; }
+int8_t get_input_offset(unsigned char input) { return _settings.input[input].offset; }
 
-void add_input_offset(unsigned char input, char offset) {
+void add_input_offset(unsigned char input, int8_t offset) {
 	_settings.input[input].offset += offset;
 	if (_settings.input[input].offset < -MAX_INPUT_OFFSET) _settings.input[input].offset = -MAX_INPUT_OFFSET;
 	if (_settings.input[input].offset > MAX_INPUT_OFFSET) _settings.input[input].offset = MAX_INPUT_OFFSET;
@@ -362,7 +359,7 @@ const char *channel_string(unsigned char channels) {
 }
 
 unsigned char get_checksum() { return _state.checksum; }
-signed char get_current_input_type() { return _settings.input[get_input()].type; }
+unsigned char get_current_input_type() { return _settings.input[get_input()].type; }
 
 const char *input_type_string(unsigned char input) {
 	switch(_settings.input[input].type)
@@ -396,11 +393,11 @@ const char *channel_name_string(unsigned char channel) {
 	return volumecontrol_channel_name_string(channel);
 }
 
-void change_input_name(unsigned char input, char change) {
-	char new_input = _settings.input[input].name + change;
-	if (new_input < 0) new_input += NR_INPUT_NAMES;
-	if (new_input > NR_INPUT_NAMES-1) new_input -= NR_INPUT_NAMES;
-	_settings.input[input].name = new_input;
+void change_input_name(unsigned char input, signed char change) {
+	signed char new_input = _settings.input[input].name + change;
+	if (new_input < 0) new_input = NR_INPUT_NAMES-1;
+	if (new_input > NR_INPUT_NAMES-1) new_input = 0;
+	_settings.input[input].name = (unsigned char)new_input;
 	set_settings_saved(0);
 }
 
@@ -508,7 +505,7 @@ void default_settings()
 			_settings.input[5].analog_select = 0b00100000;
 			_settings.input[5].dac_select = 0b00000000;
 			_settings.input[6].type = DAC2;
-			_settings.input[6].name = HDREC;
+			_settings.input[6].name = TVRECEIVER;
 			_settings.input[6].analog_select = 0b00100000;
 			_settings.input[6].dac_select = 0b00000001;
 			_settings.input[7].type = DAC3;
@@ -566,7 +563,7 @@ void default_settings()
 		_settings.nr_inputs = 5;
 		// Digital inputs
 		_settings.input[0].type = DAC1;
-		_settings.input[0].name = HDREC;
+		_settings.input[0].name = TV;
 		_settings.input[0].dac_select = 0b00000000;
 		_settings.input[1].type = DAC2;
 		_settings.input[1].name = HTPC;
@@ -637,8 +634,9 @@ void preamp_on()
 	if (_settings.use_inputselect_pcb) inputselect_init();
 
 	_state.volume = 2*get_parameter(VOLUME_POWERUP);
+	_state.muted = 0;
 	ir_set_accept_address(ir_address);
-	
+
 	set_powered(1);
 
 	set_input(get_input());
@@ -660,7 +658,7 @@ void preamp_off()
 
 unsigned char checksum(void *dat, unsigned char len)
 {
-	unsigned short sum = 0xff;	
+	unsigned short sum = 0xff;
 	unsigned char i;
 
 	for(i=0;i<len;i++) {
@@ -673,15 +671,15 @@ unsigned char checksum(void *dat, unsigned char len)
 
 signed short get_parameter(unsigned char par) {
 	if (par >= MAX_PARAMETER) return 0;
-	
+
 	return _settings.parameter[par].value;
 }
 
-void set_parameter(unsigned char par, short value) {
+void set_parameter(unsigned char par, signed short value) {
 	signed short min_value, max_value;
 
 	switch(par) {
-		case VOLUME_POWERUP: 
+		case VOLUME_POWERUP:
 			min_value = -80;
 			max_value = 0;
 			break;
@@ -711,7 +709,7 @@ void set_parameter(unsigned char par, short value) {
 	set_settings_saved(0);
 }
 
-void change_parameter(unsigned char par, char change) {
+void change_parameter(unsigned char par, signed char change) {
 	if (par >= MAX_PARAMETER) return;
 
 	set_parameter(par, _settings.parameter[par].value+change);

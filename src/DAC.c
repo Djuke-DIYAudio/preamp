@@ -31,7 +31,7 @@ void dac_init()
    else error("No DAC detected");
 
 	cs4398_write_register(CS4398_REG_MISC_CONTROL, 0b11000000);	// PDN=1, CPEN, no freeze
-	
+
 	delay_ms(1);
 
 	cs4398_write_register(CS4398_REG_MODE_CONTROL, 0b00010001);	// I2S, no de-emphasis, dual speed
@@ -169,8 +169,6 @@ void dac_update_channel_offset(unsigned char channel) {
 }
 
 void dac_set_channel_offset(unsigned char channel, short offset_half_db) {
-	unsigned char regval;
-
 	if (channel >= dac_get_nr_channels()) return;
 
 	_dac_offset[channel] = dac_limit(offset_half_db, DAC_MIN_VOLUME, DAC_MAX_VOLUME);

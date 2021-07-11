@@ -4,15 +4,15 @@ HEX=DjukePreampV2.hex
 FAMILY=pic16
 PROC=18f4620
 CC=sdcc
-CFLAGS=-c --use-non-free
+CFLAGS=-c --use-non-free -Wa"--warning 1"
 LD=sdcc
 LDFLAGS=-m$(FAMILY) -p$(PROC) --use-non-free -Wl-c -Wl-m
 OBJECTS=$(SRC:.c=.o)
 LIBS=/usr/local/share/sdcc/lib/pic16/libsdcc.lib /usr/local/share/sdcc/lib/pic16/libc18f.lib /usr/local/share/sdcc/non-free/lib/pic16/libdev$(PROC).lib
 
 all: $(SRC) $(HEX)
-    
-$(HEX): $(OBJECTS) 
+
+$(HEX): $(OBJECTS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS) $(LIBS)
 
 .c.o:

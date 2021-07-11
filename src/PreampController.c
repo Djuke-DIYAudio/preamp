@@ -46,8 +46,10 @@ __code char __at __CONFIG7H CONFIG7H = _EBTRB_OFF_7H;*/
 
 // Interrupt service routine
 #define TIMER1_TICKS_PER_SECOND		19		// CLOCK_FREQ/(4*65536*2)
+#define TIMER1_TITLE_TICKS		5				// About 4x per second
 volatile unsigned char _timer0_ticks = 0;		// Number of ticks
 volatile unsigned char _timer1_ticks = 0;		// Number of ticks
+volatile unsigned char _timer1_title_ticks = 0;		// Number of ticks for title update
 volatile unsigned char _timer1_seconds = 0;		// Number of seconds
 volatile unsigned char _timer1_minutes = 0;		// Number of minutes
 volatile float _signal_level = 0;			// Signal level (in Volt)
@@ -132,8 +134,14 @@ SIGHANDLER(tmr1_handler)
 			if (_standby_minutes >= 60) { _standby_hours++; _standby_minutes = 0; }
 			if (_standby_hours >= 24) { _standby_days++; _standby_hours = 0; }
 		}
-		if (is_powered() && show_title()) TriggerEvent(EVENT_DISPLAY_TITLE);
 	}
+
+	_timer1_title_ticks++;
+	if (_timer1_title_ticks >= TIMER1_TITLE_TICKS) {
+					_timer1_title_ticks=0;
+					if (is_powered() && show_title()) TriggerEvent(EVENT_DISPLAY_TITLE);
+	}
+
 
 	// determine how long no input signal is detected
 	if (_signal_level < 0.1) _silent_ticks++;
@@ -196,7 +204,7 @@ unsigned char get_timer1_seconds() { return _timer1_seconds; }
 unsigned char get_timer1_minutes() { return _timer1_minutes; }
 unsigned char get_silent_minutes() { return _silent_minutes; }
 unsigned char get_silent_seconds() { return _silent_seconds; }
-void reset_silent_counter() { 
+void reset_silent_counter() {
 	INTCONbits.GIE = 0;	// Disable interrupts
 	// Reset silent time values
 	_silent_ticks = 0;
@@ -258,13 +266,7 @@ unsigned char headphones_connected_changed() {
 	}
 }
 
-/*unsigned char get_encoder_counter() {
-	unsigned char counter;
-	INTCONbits.GIE = 0;	// Disable interrupts
-	counter = _encoder_counter;
-	INTCONbits.GIE = 1;	// Enable interrupts
-	return counter;
-}*/
+unsigned char get_encoder_counter() { return _encoder_counter; }
 
 unsigned char encoder_counter_changed() {
 	static unsigned char prev_encoder_counter = 0;
@@ -275,7 +277,7 @@ unsigned char encoder_counter_changed() {
 	} else return 0;
 }
 
-char get_encoder_diff() {
+signed char get_encoder_diff() {
 	static unsigned char prev_encoder_counter = 0;
 	unsigned char encoder_counter = _encoder_counter;
 	char diff = encoder_counter - prev_encoder_counter;
@@ -343,8 +345,8 @@ void lvd_init() {
 }
 
 
-void isr_init() {	
-	/*Enable high and low priority interrupts */	
+void isr_init() {
+	/*Enable high and low priority interrupts */
 	RCONbits.IPEN = 1;	// Enable priority interrupts
 
 	ad_init();
@@ -408,8 +410,8 @@ void preampcontroller_init()
 	signed char result;
 
 	// Disable unused peripherals
-	ADCON0 = 0x00; 
-	ADCON1 = 0b00001111; 
+	ADCON0 = 0x00;
+	ADCON1 = 0b00001111;
 	T1CON = 0x00; // Disable timer1, so pins RC0/RC1 are available
 	T3CON = 0x00; // Disable timer3, so pins RC0/RC1 are available
 
@@ -791,7 +793,7 @@ void EventInfraredHandler()
 
 	sprintf(string, "IR=%s A:%d C:%d S:%d", ir_type_string(), address, command, same_codes);
 	debug(2, string);
-	
+
    if (received>=0) {
 	   sprintf(string, "IR cmd accepted: %d", received);
 	   debug(2, string);
