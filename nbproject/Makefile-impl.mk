@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=preamp.X
+PROJECTNAME=preamp
 
 # Active Configuration
 DEFAULTCONF=default

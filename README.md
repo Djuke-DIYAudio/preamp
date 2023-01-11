@@ -32,10 +32,16 @@ From the project directory, simply run:
 make
 ```
 
-If no errors occurred, this will result in `dist/default/production/preamp.X.production.hex` being generated.
+If no errors occurred, this will result in `dist/default/production/preamp.production.hex` being generated.
 
 #### MPLAB X IDE
-If desired, the source code can be developed using the Microchip MPLAB IDE.
+The project can be opened and adjusted using the Microchip MPLAB X IDE.
+
+The following project settings are important:
+* XC8 Global Options -> Stack options -> Stack type: `Hybrid`
+* XC8 Linker -> Memory model -> ROM ranges: `default, -FF00-FFFF` (bootloader)
+* XC8 Linker -> Runtime -> Initialize data
+* XC8 Linker -> Runtime -> Format hex file for download
 
 ### SDCC (up to v1.3)
 Building the software for earlier versions is done in Linux and requires SDCC (small device C Compiler) to be installed. Because the non-free pic16 is typically not included in SDCC from major Linux distributions it is advised to download it from the [SDCC homepage](http://sdcc.sourceforge.net)
