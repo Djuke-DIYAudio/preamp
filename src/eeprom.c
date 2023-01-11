@@ -1,9 +1,8 @@
 #include "eeprom.h"
 #include "PreampController.h"
 
-char eeprom_read(unsigned short address)
+char PA_eeprom_read(unsigned short address)
 {
-
 	// Load address
 	EEADRH = (address >> 8) & 0xff;
 	EEADR = (address & 0xff);
@@ -26,7 +25,7 @@ char eeprom_read(unsigned short address)
 
 }
 
-void eeprom_write(unsigned short address, char dat)
+void PA_eeprom_write(unsigned short address, char dat)
 {
 	// Load address and data
 	EEADRH = (address >> 8) & 0xff;
@@ -55,7 +54,7 @@ void eeprom_write(unsigned short address, char dat)
 	EECON1bits.WREN = 0;
 }
 
-void eeprom_bulkwrite(unsigned short start_address, void *dat, unsigned short nbytes)
+void PA_eeprom_bulkwrite(unsigned short start_address, void *dat, unsigned short nbytes)
 {
 	unsigned short i;
 
@@ -69,8 +68,8 @@ void eeprom_bulkwrite(unsigned short start_address, void *dat, unsigned short nb
 
 	for (i=0;i<nbytes;i++) {
 		// Load address and data
-		EEADRH = (start_address+i >> 8) & 0xff;
-		EEADR = (start_address+i & 0xff);
+		EEADRH = ((start_address+i) >> 8) & 0xff;
+		EEADR = ((start_address+i) & 0xff);
 		EEDATA = ((char *) dat)[i];
 
 		// Required write sequence
@@ -89,7 +88,7 @@ void eeprom_bulkwrite(unsigned short start_address, void *dat, unsigned short nb
 	EECON1bits.WREN = 0;
 }
 
-void eeprom_bulkread(unsigned short start_address, void *dat, unsigned short nbytes)
+void PA_eeprom_bulkread(unsigned short start_address, void *dat, unsigned short nbytes)
 {
 	unsigned short i;
 
@@ -101,8 +100,8 @@ void eeprom_bulkread(unsigned short start_address, void *dat, unsigned short nby
 	for (i=0;i<nbytes;i++) {
 
 		// Load address
-		EEADRH = (start_address+i >> 8) & 0xff;
-		EEADR = (start_address+i & 0xff);
+		EEADRH = ((start_address+i) >> 8) & 0xff;
+		EEADR = ((start_address+i) & 0xff);
 
 		// Read, data is available in eedata the next cycle.
 		EECON1bits.RD = 1;

@@ -12,6 +12,8 @@
 #include "terminal.h"
 #include "EventHandler.h"
 
+#define TERM_MAX_LINE_SIZE  100
+
 //Type definitions
 typedef struct {
     char* name;
@@ -59,18 +61,18 @@ cmd_t dsp_table[CMDS] ={
     CMD(help,"Display help")
 };
 
-volatile unsigned char _term_debug_level = 0;
-volatile short _term_bytes_received = 0;
-volatile char _term_buf[80];
+volatile uint8_t _term_debug_level = 0;
+volatile uint8_t _term_bytes_received = 0;
+char _term_buf[TERM_MAX_LINE_SIZE];
 volatile char _term_buf_pnt = 0;
 volatile char _term_buf_busy = 0;
 
-short term_bytes_received() { return _term_bytes_received; }
+uint8_t term_bytes_received(void) { return _term_bytes_received; }
 
 void info(const char *str) { printf("[INFO]:%s\n", str); }
 void warning(const char *str) { printf("[WARNING]:%s\n", str); }
 void error(const char *str) { printf("[ERROR]:%s\n", str); }
-void debug(unsigned char db_level, const char *str) {
+void debug(uint8_t db_level, const char *str) {
    if (_term_debug_level >= db_level) {
       if (db_level == 1) printf("[EVENT]:%s\n", str);
       else printf("[DEBUG]:%s\n", str);
@@ -78,7 +80,8 @@ void debug(unsigned char db_level, const char *str) {
 }
 void syntax(const char *cmd, const char *str) { printf("[SYNTAX]: %s %s\n", cmd, str); }
 
-void term_init() {
+
+void term_init(void) {
 	TXSTAbits.TX9   = 0;        // 8-bit transmission
 	TXSTAbits.TXEN  = 1;        // Transmit enabled
 	TXSTAbits.SYNC  = 0;        // Asynchronous mode
@@ -106,11 +109,18 @@ void term_init() {
 	IPR1bits.TXIP = 0;		// Low-prio interrupt
 	PIE1bits.TXIE = 0;		// Disable interrupt
 
-	stdout = STREAM_USART;
 }
 
-void term_receive(unsigned char byte) {
-	static unsigned char esc_seq = 0;
+// for printf usage from the XC8 user guide
+void putch(char data)
+{
+    while( ! TXIF)
+        continue;
+    TXREG = data;
+}
+
+void term_receive(char byte) {
+	static char esc_seq = 0;
 
 	_term_bytes_received++;
 
@@ -121,7 +131,7 @@ void term_receive(unsigned char byte) {
 		LCD_clear();
 		LCD_row1();
 		LCD_puts("Bootloader reset");
-		__asm reset __endasm;
+        asm("reset");
 	}
 
 	if (RCSTAbits.OERR) {
@@ -168,7 +178,7 @@ void term_receive(unsigned char byte) {
 			return;
 		}
 	} else {
-		if (_term_buf_pnt > 78) {
+		if (_term_buf_pnt > TERM_MAX_LINE_SIZE-1) {
 			error("Line too long");
 			_term_buf_pnt = 0;
 			return;
@@ -244,7 +254,7 @@ unsigned char term_args_parse(char *args, char *argv[]) {
 	return argc;
 }
 
-void term_handle_command() {
+void term_handle_command(void) {
 	unsigned char i=CMDS;
 	char* tok = term_strtok(_term_buf,delim);
 	if(!tok) return;
@@ -281,13 +291,13 @@ void term_show(char *args) {
 
 void term_par(char *args) {
 	unsigned char i;
-	unsigned char npar = nr_parameters();
+	uint8_t npar = nr_parameters();
 	short value;
 	char *argv[MAX_ARGS];
 	unsigned char argc = term_args_parse(args, argv);
 
 	if (argc == 1) { // No parameter, show full list
-		printf("Pars:\n", npar);
+		printf("Pars: %d\n", npar);
 		for (i=0;i<npar;i++) {
 			printf(" %10s (%s): %d [%s]\n", get_parameter_cmd_name(i), 
 				get_parameter_name(i), get_parameter(i), get_parameter_unit(i));
@@ -335,7 +345,7 @@ void term_mute(char *args) {
 	else printf("unknown par: %s\n", argv[1]);
 }
 
-void term_reboot(char *args) { __asm reset __endasm; }
+void term_reboot(char *args) { asm("reset");}
 
 void term_settings(char *args) { 
 	char *argv[MAX_ARGS];
@@ -346,7 +356,7 @@ void term_settings(char *args) {
 		else if (!strcmp(argv[1], "save")) save_settings(); 
 		else if (!strcmp(argv[1], "clear")) clear_settings(); 
 		else if (!strcmp(argv[1], "default")) default_settings(); 
-		else if (!strcmp(argv[1], "setup")) setup_settings(atoi(argv[2])); 
+		else if (!strcmp(argv[1], "setup")) setup_settings((uint8_t)atoi(argv[2])); 
 	} else syntax(argv[0], "<load|save|clear|default|setup>");
 }
 
@@ -357,25 +367,24 @@ void term_ver(char *args) {
 }
 
 void term_volume(char *args) {
-	short value;
 	char *argv[MAX_ARGS];
 	unsigned char argc = term_args_parse(args, argv);
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "inc")) {
-			value = 2;
-			if (argc == 3) value = atoi(argv[2]);
-			add_volume(value);
+			int8_t increment = 2;
+			if (argc == 3) increment = (int8_t)atoi(argv[2]);
+			add_volume(increment);
 			return; 
 		} else if (!strcmp(argv[1], "dec")) { 
-			value = -2;
-			if (argc == 3) value = -atoi(argv[2]);
-			add_volume(value);
+			int8_t increment = -2;
+			if (argc == 3) increment = -(int8_t)atoi(argv[2]);
+			add_volume(increment);
 			return;
 		} else if (!strcmp(argv[1], "set")) {
 			if (argc == 3) {
-				value = atoi(argv[2]);
-				set_volume(value);
+				int16_t volume = (int16_t)atoi(argv[2]);
+				set_volume(volume);
 				return;
 			}
 		}
@@ -385,7 +394,7 @@ void term_volume(char *args) {
 }
 
 void term_input(char *args) {
-	unsigned char value;
+	uint8_t input;
 	char *argv[MAX_ARGS];
 	unsigned char argc = term_args_parse(args, argv);
 
@@ -394,8 +403,8 @@ void term_input(char *args) {
 		else if (!strcmp(argv[1], "prev")) { previous_input(); return; }
 		else if (!strcmp(argv[1], "set")) {
 			if (argc == 3) {
-				value = atoi(argv[2]);
-				set_input(value);
+				input = (uint8_t)atoi(argv[2]);
+				set_input(input);
 				return;
 			}
 		}
@@ -404,22 +413,23 @@ void term_input(char *args) {
 }
 
 void term_channel(char *args) {
-	unsigned char channel, value;
+	uint8_t channel;
+    int8_t value;
 	char *argv[MAX_ARGS];
 	unsigned char argc = term_args_parse(args, argv);
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "offset")) {
 			if (argc == 4) {
-				channel = atoi(argv[2]);
-				value = atoi(argv[3]);
+				channel = (uint8_t)atoi(argv[2]);
+				value = (int8_t)atoi(argv[3]);
 				set_channel_offset(channel, value);
 				return;
 			}
 		}
 		if (!strcmp(argv[1], "show")) {
 			if (argc == 3) {
-				channel = atoi(argv[2]);
+				channel = (uint8_t)atoi(argv[2]);
 				printf("Offset ch %d (%s): %d\n", channel, channel_name_string(channel), get_channel_offset(channel));
 				return;
 			}
@@ -429,10 +439,10 @@ void term_channel(char *args) {
 }
 
 void term_title(char *args) {
-	unsigned char input;
+	uint8_t input;
 	char *tok = term_strtok(NULL,delim);
 	if (tok) {
-		input = atoi(tok);		
+		input = (uint8_t)atoi(tok);		
 		tok = term_strtok(NULL,"\0");
 		if (tok) set_title(input, tok);
 	}
@@ -465,11 +475,11 @@ void term_button(char *args) {
 
 void term_db(char *args) {
 	char *argv[MAX_ARGS];
-   char string[20];
+    char string[20];
 	unsigned char argc = term_args_parse(args, argv);
 
 	if (argc > 1) {
-		_term_debug_level = atoi(argv[1]);
+        _term_debug_level = (uint8_t)atoi(argv[1]);
 	}
 	sprintf(string, "Debug level = %d", _term_debug_level);
    info(string);

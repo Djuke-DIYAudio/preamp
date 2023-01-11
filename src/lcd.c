@@ -10,13 +10,26 @@ static unsigned char _max_delay_cnt = 0;
 static unsigned char _delay_cnt = 0;
 static unsigned char _lcd_width = 20;
 
+// specific delay with variable as a parameter
+// see details in "time_delay_40MHz.c
+void PA_delay_100us(unsigned int val)
+{
+
+    for( unsigned int i = val; i > 0; i--)
+    {
+        delay_100us(1);        
+    }    
+}
+
 unsigned char LCD_width() { return _lcd_width; }
 void LCD_set_width(unsigned char width) { _lcd_width = width; }
 
-void LCD_delay() {
+void LCD_delay(void) {
 	unsigned char busy = 0;
 	if (_delay_100us) {
-		delay_100us(_delay_100us);	
+        
+		PA_delay_100us(_delay_100us);	
+        
 	} else {
 		LCD_BUSY_DIRECTION = INPUT_BIT;
 		LCD_RS = 0;	// command
@@ -43,27 +56,27 @@ void LCD_row1_pos(unsigned char pos) {
 	if (pos < 0x28) LCD_command(LCD_ROW1+pos);
 }
 
-void LCD_row1_clear() {
+/*void LCD_row1_clear(void) {
 	unsigned char i;
 	LCD_row1();
 	for(i=0;i<_lcd_width;i++) LCD_putc(' ');
 	LCD_row1();
-}
+}*/
 
 void LCD_row2_pos(unsigned char pos) {
 	if (pos < 0x28) LCD_command(LCD_ROW2+pos);
 }
 
-void LCD_row2_clear() {
+void LCD_row2_clear(void) {
 	unsigned char i;
 	LCD_row2();
 	for(i=0;i<_lcd_width;i++) LCD_putc(' ');
 	LCD_row2();
 }
 
-void LCD_brightness(char brightness) {
+/*void LCD_brightness(char brightness) {
 	LCD_command(LCD_4BIT + (brightness & 0x3));
-}
+}*/
 
 void LCD_command(unsigned char command)
 {

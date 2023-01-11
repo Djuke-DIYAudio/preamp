@@ -1,4 +1,3 @@
-#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include "PreampController.h"		// Pin settings
@@ -12,15 +11,26 @@
 #include "terminal.h"
 
 #define INACTIVE_SECONDS_LIMIT		20 // Return after 20s of inactivity
-#define MAX_TITLE                 35
+#define MAX_TITLE                   80
 
 // Current menu selection
 static const menu_t *current_menu = NULL;
-static unsigned char menu_idx = 0;
+static uint8_t menu_idx = 0;
 static char _title[MAX_TITLE] = "";
-static unsigned char _title_input = 0;
-static unsigned char _show_title = 0;
-static unsigned char _title_idx = 0;
+static uint8_t _title_input = 0;
+static bool _show_title = 0;
+static uint8_t _title_idx = 0;
+
+static const char *input_offsets_line1(uint8_t item);
+static const char *input_names_line1(uint8_t item);
+static const char *input_offsets_line2(uint8_t item);
+static const char *input_names_line2(uint8_t item);
+static const char *channel_offsets_line1(uint8_t item);
+static const char *channel_offsets_line2(uint8_t item);
+static const char *setup_line2(uint8_t item);
+static uint8_t nr_info_items(void);
+static const char *info_line1(uint8_t item);
+static const char *info_line2(uint8_t item);
 
 const menu_t input_names_menu =
     {
@@ -89,16 +99,16 @@ const menu_t main_menu =
         {&input_names_menu, &input_offsets_menu, &channel_offsets_menu, &info_menu, &parameter_menu}
     };
 
-char in_menu()
+char in_menu(void)
 {
 	if (current_menu == NULL) return 0;
 	else return 1;
 }
 
-void menu_left()
+void menu_left(void)
 {
-	unsigned char nr_submenus = current_menu->nr_submenus;
-	unsigned char nr_items = 0;
+	uint8_t nr_submenus = current_menu->nr_submenus;
+	uint8_t nr_items = 0;
 
 	if (nr_submenus) {	// Menu has submenus
 		if (menu_idx > 0) menu_idx--;
@@ -113,10 +123,10 @@ void menu_left()
 	display_menu();
 }
 
-void menu_right()
+void menu_right(void)
 {
-	unsigned char nr_submenus = current_menu->nr_submenus;
-	unsigned char nr_items = 0;
+	uint8_t nr_submenus = current_menu->nr_submenus;
+	uint8_t nr_items = 0;
 
 	if (nr_submenus) {	// Menu has submenus
 		if (menu_idx < current_menu->nr_submenus-1) menu_idx++;
@@ -131,7 +141,7 @@ void menu_right()
 	display_menu();
 }
 
-void menu_main()
+void menu_main(void)
 {
 	current_menu = &main_menu;
 	menu_idx = 0;
@@ -139,7 +149,7 @@ void menu_main()
 	display_menu();
 }
 
-void menu_exit()
+void menu_exit(void)
 {
 	current_menu = NULL;
 
@@ -147,10 +157,10 @@ void menu_exit()
 	display_volume(1);
 }
 
-void menu_select()
+void menu_select(void)
 {
 	const menu_t *submenu = current_menu->nr_submenus ? current_menu->submenu[menu_idx] : NULL;
-	unsigned char nr_items;
+	uint8_t nr_items;
 
 	if (submenu != NULL) {  // Go to submenu
 		current_menu = submenu;
@@ -166,7 +176,7 @@ void menu_select()
 
 void menu_change(signed char value)
 {
-	unsigned char nr_items;
+	uint8_t nr_items;
 
 	if (current_menu->nr_items != NULL && current_menu->item_change != NULL) {
 		nr_items = current_menu->nr_items();
@@ -175,10 +185,10 @@ void menu_change(signed char value)
 	display_menu();
 }
 
-void display_menu()
+void display_menu(void)
 {
 	const menu_t *submenu;
-	unsigned char nr_items;
+	uint8_t nr_items;
 
 	if (current_menu == NULL) return;	// No menu selected
 	if (current_menu->nr_submenus) submenu = current_menu->submenu[menu_idx];
@@ -215,16 +225,16 @@ void display_menu()
 	}
 }
 
-static const char *input_offsets_line1(unsigned char item)
+static const char *input_offsets_line1(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 	sprintf(string, "In: < %-12s >", input_name_string(item));
 	return string;
 }
 
-static const char *input_offsets_line2(unsigned char item)
+static const char *input_offsets_line2(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 	if (get_input_offset(item) < 0)
 		sprintf(string, "Offset: -%d.%ddB", (-get_input_offset(item)/2), 5*((-get_input_offset(item))%2));
 	else
@@ -232,32 +242,32 @@ static const char *input_offsets_line2(unsigned char item)
 	return string;
 }
 
-static const char *input_names_line1(unsigned char item)
+static const char *input_names_line1(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 	sprintf(string, "In: < %-9s >", input_type_string(item));
 	if (is_enabled(item)) strcat(string, " on");
 	else strcat(string, "off");
 	return string;
 }
 
-static const char *input_names_line2(unsigned char item)
+static const char *input_names_line2(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 	sprintf(string, "Name: %s", input_name_string(item));
 	return string;
 }
 
-static const char *channel_offsets_line1(unsigned char item)
+static const char *channel_offsets_line1(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 	sprintf(string, "Ch: < %-12s >", channel_name_string(item));
 	return string;
 }
 
-static const char *channel_offsets_line2(unsigned char item)
+static const char *channel_offsets_line2(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 	if (get_channel_offset(item) < 0)
 		sprintf(string, "Offset: -%d.%ddB", (-get_channel_offset(item)/2), 5*((-get_channel_offset(item))%2));
 	else
@@ -265,23 +275,23 @@ static const char *channel_offsets_line2(unsigned char item)
 	return string;
 }
 
-static const char *parameters_line1(unsigned char item)
+static const char *parameters_line1(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 	sprintf(string, "< %-16s >", get_parameter_name(item));
 	return string;
 }
 
-static const char *parameters_line2(unsigned char item)
+static const char *parameters_line2(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 	sprintf(string, "Value: %d [%s]", get_parameter(item), get_parameter_unit(item));
 	return string;
 }
 
-static unsigned char nr_info_items() { return 6; }
+static uint8_t nr_info_items(void) { return 6; }
 
-static const char *info_line1(unsigned char item)
+static const char *info_line1(uint8_t item)
 {
 	switch(item)
 	{
@@ -295,9 +305,9 @@ static const char *info_line1(unsigned char item)
     }
 }
 
-static const char *info_line2(unsigned char item)
+static const char *info_line2(uint8_t item)
 {
-	const char string[21];
+	static char string[21];
 
 	switch(item)
 	{
@@ -312,9 +322,9 @@ static const char *info_line2(unsigned char item)
 	return string;
 }
 
-static unsigned char nr_setup_items() { return 3; }
+//static uint8_t nr_setup_items(void) { return 3; }
 
-static const char *setup_line1(unsigned char item)
+/*static const char *setup_line1(uint8_t item)
 {
 	switch(item)
 	{
@@ -325,21 +335,21 @@ static const char *setup_line1(unsigned char item)
     }
 }
 
-static const char *setup_line2(unsigned char item)
+static const char *setup_line2(uint8_t item)
 {
 	switch(item)
 	{
         	default: return "?"; break;
 	}
-}
+}*/
 
 /*
 
 static char menu_ir()
 {
 	char string[21];
-	unsigned char menu_item = 0;
-	unsigned char length, transitions;
+	uint8_t menu_item = 0;
+	uint8_t length, transitions;
 	static unsigned short irdata;
 
 //	char ircode;
@@ -369,7 +379,7 @@ static char menu_ir()
 static char menu_settings()
 {
 	char ircode;
-	unsigned char menu_item = 0, max_item;
+	uint8_t menu_item = 0, max_item;
 
 	LCD_clear();
 	LCD_row1();
@@ -394,7 +404,7 @@ static char menu_settings()
 	}
 }
 
-static void display_menu_settings(unsigned char item)
+static void display_menu_settings(uint8_t item)
 {
 	char string[21];
 	LCD_row2_clear();
@@ -412,11 +422,10 @@ static void display_menu_settings(unsigned char item)
 
 */
 
-char menu_hw_setup()
+void menu_hw_setup(void)
 {
-	unsigned char menu_item = 0, max_item;
-	signed char value_change;
-	static unsigned char prev_encoder_counter;
+	uint8_t menu_item = 0, max_item;
+	static uint8_t prev_encoder_counter;
 
 	LCD_display("Enter HW setup..", 0x00, 1, INFO);
 	delay_s(1);
@@ -430,28 +439,26 @@ char menu_hw_setup()
 	prev_encoder_counter = get_encoder_counter();
 	while(1)
 	{
-		value_change = get_encoder_counter() - prev_encoder_counter;
+		int8_t value_change = (int8_t)(get_encoder_counter() - prev_encoder_counter);
 		if (value_change / 2) {
-      prev_encoder_counter = get_encoder_counter();
+            prev_encoder_counter = get_encoder_counter();
 			toggle_hw_setup(menu_item);
 			display_menu_hw_setup(menu_item);
 		}
-		if (button_menu_pressed()) return -1;
-		if (button_power_pressed()) return -1;
+		if (button_menu_pressed()) return;
+		if (button_power_pressed()) return;
 		if (button_left_pressed()) { if (menu_item > 0) menu_item--; else menu_item = max_item; display_menu_hw_setup(menu_item); }
 		if (button_right_pressed()) { if (menu_item < max_item) menu_item++; else menu_item = 0; display_menu_hw_setup(menu_item); }
 		if (button_select_pressed()) {
 			if (menu_item < max_item) { menu_item++; display_menu_hw_setup(menu_item); }
-			else { default_settings(); return -1; }
-
+			else { default_settings(); return; }
 		}
 	}
 }
 
-static void display_menu_hw_setup(unsigned char item)
+static void display_menu_hw_setup(uint8_t item)
 {
-    const char string[5];
-
+    static char string[5];
 	// Show the hw setup question on the start of the second row
 	LCD_row2_clear();
 	LCD_row2();
@@ -459,19 +466,19 @@ static void display_menu_hw_setup(unsigned char item)
 
 	// Show the value on the end of the second row
 	sprintf(string, "%s", hw_setup_value(item));
-	LCD_row2_pos(LCD_width()-strlen(string));
+	LCD_row2_pos(LCD_width()-(uint8_t)strlen(string));
 	LCD_puts(string);
 
 }
 
-void display_volume(unsigned char full_update)		// Display volume
+void display_volume(bool full_update)		// Display volume
 {
 	// Display input and output channels on first 7 characters
 	// Display volume on last 7 characters
 	static short volume;
 
-	static unsigned char input_mode;
-	static unsigned char output_mode;
+	static uint8_t input_mode;
+	static uint8_t output_mode;
 	static char muted;
 
    if (in_menu()) return;
@@ -502,14 +509,14 @@ void display_volume(unsigned char full_update)		// Display volume
 	}
 }
 
-void display_input(unsigned char full_update)		// Display input
+void display_input(bool full_update)		// Display input
 {
 	// Display input name on first 13 characters
 	// Display input level (for analog) or bit/sample rate (for digital) on last 7 characters
 	char string[21];
-	unsigned char cnt;
+	uint8_t cnt;
 	float level;
-	static unsigned char dac_error;
+	static uint8_t dac_error;
 
    if (in_menu()) return;
 
@@ -533,13 +540,13 @@ void display_input(unsigned char full_update)		// Display input
 //				volumecontrol_mute();
 //				dac_mute();
 				strcpy(string, dac_error_string());
-				LCD_row1_pos(LCD_width()-strlen(string));
+				LCD_row1_pos(LCD_width()-(uint8_t)strlen(string));
 				LCD_puts(string);
 			} else {
 //				volumecontrol_unmute();
 //				dac_unmute();
 				strcpy(string, dac_rate_string());
-				LCD_row1_pos(LCD_width()-strlen(string));
+				LCD_row1_pos(LCD_width()-(uint8_t)strlen(string));
 				LCD_puts(string);
 			}
 			dac_error = dac_receiver_error();
@@ -563,7 +570,7 @@ void display_input(unsigned char full_update)		// Display input
 	}
 }
 
-void set_title(unsigned char input, char *title)		// Display title
+void set_title(uint8_t input, char *title)		// Display title
 {
 	_title_input = input;
 	strncpy(_title, title, MAX_TITLE-1);
@@ -574,11 +581,11 @@ void set_title(unsigned char input, char *title)		// Display title
 	display_title();
 }
 
-unsigned char show_title() { return _show_title; }
+bool show_title() { return _show_title; }
 
-void display_title()
+void display_title(void)
 {
-	unsigned char i, idx, len, scroll=0;
+	uint8_t i, idx, len, scroll=0;
 	char *str;
 
 	if (!_show_title || !is_powered()) return;
@@ -586,7 +593,7 @@ void display_title()
   if (in_menu()) return;
   
 	// Scroll text if title is longer than 13 characters
-	len = strlen(_title);
+	len = (uint8_t) strlen(_title);
 	if (len > 13) {
 		scroll = 1;
 	}

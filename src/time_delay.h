@@ -1,14 +1,20 @@
-#ifndef TIME_DELAY_H
-#define TIME_DELAY_H
+//#ifndef TIME_DELAY_H
+//#define TIME_DELAY_H
 
-#include <delay.h>
+#include <xc.h>
 
-void delay_us(unsigned char us);
-void delay_10us(unsigned char us10);
-void delay_100us(unsigned char us100);
-void delay_ms(unsigned char ms);
-void delay_10ms(unsigned char ms10);
-void delay_100ms(unsigned char ms100);
-void delay_s(unsigned char s);
+// Main oscillator frequency is 40MHz
+#define _XTAL_FREQ      40000000
 
-#endif
+#define delay_us(X)     __delay_us(X)
+#define delay_10us(X)   __delay_us(10*X)
+#define delay_100us(X)  __delay_us(100*X);
+
+#define delay_ms(X)     __delay_ms(X)
+#define delay_10ms(X)   __delay_ms(10*X)
+#define delay_100ms(X)  __delay_ms(100*X);
+
+#define delay_s(X)      __delay_ms(1000*X)
+
+
+//#endif

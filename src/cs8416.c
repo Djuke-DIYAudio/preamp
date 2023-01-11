@@ -2,45 +2,43 @@
 #include "cs8416.h"
 #include "time_delay.h"
 
-unsigned char _cs8416_addr = 0b0010000;	// 7-bit address of the CS8416 chip
+uint8_t _cs8416_addr = 0b00100000;	// MSB: 7-bit address of the CS8416 chip + LSB: R/W bit
 
-void cs8416_write_register(unsigned char reg, unsigned char value)
+void cs8416_write_register(uint8_t reg, uint8_t value)
 {
-	unsigned char temp;
-
 	DAC_CS = 0;		// Enable SPI
-	temp = spi_rw(_cs8416_addr<<1); // Write operation (shift address to left and clear R/W bit)
-	temp = spi_rw(reg);	// Select register
-	temp = spi_rw(value);	// Write value
+	(void)spi_rw(_cs8416_addr); // Write operation (clear R/W bit)
+	(void)spi_rw(reg);	// Select register
+	(void)spi_rw(value);	// Write value
 	DAC_CS = 1;		// Disable SPI
 
 }
 
-unsigned char cs8416_read_register(unsigned char reg)
+uint8_t cs8416_read_register(uint8_t reg)
 {
 	unsigned char temp;
 
 	DAC_CS = 0;		// Enable SPI
-	temp = spi_rw(_cs8416_addr<<1); // Write operation (shift address to left and clear R/W bit)
+	temp = spi_rw(_cs8416_addr); // Write operation (clear R/W bit)
 	temp = spi_rw(reg);	// Select register
 	DAC_CS = 1;		// Disable SPI
 
 	delay_us(1);
 
 	DAC_CS = 0;		// Enable SPI
-	temp = spi_rw((_cs8416_addr<<1) | 0x01); // Read operation (shift address to left and set R/W bit)
+	temp = spi_rw(_cs8416_addr | 0b1); // Read operation (set R/W bit)
 	temp = spi_rw(0x00);	// Empty output
 	DAC_CS = 1;		// Disable SPI
 	return temp;
 }
 
-unsigned char cs8416_is_connected()
+bool cs8416_is_connected(void)
 {
-	if ((cs8416_read_register(CS8416_REG_ID_VERSION) >> 4) == 0b0010) return 1;
-	else return 0;
+	if ((cs8416_read_register(CS8416_REG_ID_VERSION) >> 4) == 0b0010) return true;
+	else return false;
 }
 
-void cs8416_set_input(unsigned char value)
+void cs8416_set_input(uint8_t value)
 {
 	unsigned char data;
 
@@ -95,9 +93,9 @@ unsigned char cs8416_data_valid()
 
 }*/
 
-unsigned char cs8416_sample_rate()
+uint8_t cs8416_sample_rate(void)
 {
-	unsigned char data, rate;
+	uint8_t data, rate;
 
 	data = cs8416_read_register(CS8416_REG_CHA_STAT3);
 	rate = data & 0b00001111;
@@ -113,9 +111,9 @@ unsigned char cs8416_sample_rate()
 	else return 0;
 }
 
-unsigned char cs8416_bit_rate()
+uint8_t cs8416_bit_rate(void)
 {
-	unsigned char data, rate;
+	uint8_t data, rate;
 
 	data = cs8416_read_register(CS8416_REG_CHA_STAT4);
 	rate = data & 0b00001111;

@@ -1,10 +1,11 @@
 #ifndef INPUTSELECT_H
 #define INPUTSELECT_H
 
-// Function definitions
-void inputselect_init();
+#include <stdint.h>
 
-void inputselect_set_input(unsigned char input);
-unsigned char inputselect_get_input();
+// Function definitions
+void inputselect_init(void);
+void inputselect_set_input(uint8_t input);
+unsigned char inputselect_get_input(void);
 
 #endif

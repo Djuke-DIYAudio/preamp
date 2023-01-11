@@ -13,22 +13,23 @@
 #define VC_MAX_CHANNELS		16
 
 // Global variables
-static unsigned char _volumecontrol_mute_register[VC_MAX_DEVICES] = {0, 0};	// Mute control register (per device)
-static unsigned char _volumecontrol_output_mode = CH5_SUB;
-static unsigned char _volumecontrol_input_mode = CH5_SUB;
-static unsigned char _volumecontrol_nr_channels = 8;
-static unsigned char _volumecontrol_nr_devices = 2;
-static unsigned char _volumecontrol_type = VC_NORMAL;
-static short _volumecontrol_channel_offset[VC_MAX_CHANNELS];
+static uint8_t _volumecontrol_mute_register[VC_MAX_DEVICES] = {0, 0};	// Mute control register (per device)
+static uint8_t _volumecontrol_output_mode = CH5_SUB;
+static uint8_t _volumecontrol_input_mode = CH5_SUB;
+static uint8_t _volumecontrol_nr_channels = 8;
+static uint8_t _volumecontrol_nr_devices = 2;
+static uint8_t _volumecontrol_type = VC_NORMAL;
+static int8_t _volumecontrol_channel_offset[VC_MAX_CHANNELS];
 
-short volumecontrol_limit(short input, short min, short max) {
+int16_t volumecontrol_limit(int16_t input, int16_t min, int16_t max) {
 	if (input < min) return min;
 	if (input > max) return max;
 	return input;
 }
 
-const char *volumecontrol_channel_name_string(unsigned char channel) { 
-	const char string[10];
+const char *volumecontrol_channel_name_string(uint8_t channel) { 
+	// const char string[10];
+	static char string[10];
 
 	if (_volumecontrol_type == VC_NORMAL) {
 		switch (channel) {
@@ -43,15 +44,15 @@ const char *volumecontrol_channel_name_string(unsigned char channel) {
 			default: return "?";
 		}
 	} else {
-		sprintf(string, "Number %d", channel+1);
+ 		sprintf(string, "Number %d", channel+1);
 		return string;
 	}
 }
 
-const char *volumecontrol_channel_string(unsigned char channels) {
-	const char string[4];
+const char *volumecontrol_channel_string(uint8_t channels) {
+	static char string[4];
 
-	unsigned char nr_channels = channels & 0x7F;
+	uint8_t nr_channels = channels & 0x7F;
 	if (channels > 0x7F) nr_channels++;
 
 	if (_volumecontrol_type == VC_NORMAL) {
@@ -73,14 +74,16 @@ const char *volumecontrol_channel_string(unsigned char channels) {
 	}
 }
 
-void volumecontrol_set_input_mode(unsigned char channels) {
+void volumecontrol_set_input_mode(uint8_t channels) {
 	_volumecontrol_input_mode = channels;
 	volumecontrol_set_hafler(_volumecontrol_input_mode == CH2);
 }
 
-unsigned char volumecontrol_get_input_mode() { return _volumecontrol_input_mode; }
-void volumecontrol_set_output_mode(unsigned char channels) { 
-	unsigned char i;
+//uint8_t volumecontrol_get_input_mode(void) { return _volumecontrol_input_mode; }
+
+
+void volumecontrol_set_output_mode(uint8_t channels) { 
+	uint8_t i;
 
 	_volumecontrol_output_mode = channels;
 	for (i=0;i<_volumecontrol_nr_channels;i++) {
@@ -89,8 +92,10 @@ void volumecontrol_set_output_mode(unsigned char channels) {
 		else volumecontrol_mute_channel(i);
 	}
 }
-unsigned char volumecontrol_get_output_mode() { return _volumecontrol_output_mode; }
-unsigned char volumecontrol_next_output_mode() {
+
+//uint8_t volumecontrol_get_output_mode(void) { return _volumecontrol_output_mode; }
+
+uint8_t volumecontrol_next_output_mode(void) {
 	if (_volumecontrol_type == VC_NORMAL) {
 		_volumecontrol_output_mode++;
 		if (_volumecontrol_output_mode > CH5 && _volumecontrol_output_mode < CH2_SUB) _volumecontrol_output_mode = CH2_SUB;
@@ -99,19 +104,19 @@ unsigned char volumecontrol_next_output_mode() {
 	return _volumecontrol_output_mode;
 }
 
-unsigned char volumecontrol_get_nr_output_channels() {
-	unsigned char output_channels = _volumecontrol_output_mode & 0x7F;
+uint8_t volumecontrol_get_nr_output_channels() {
+	uint8_t output_channels = _volumecontrol_output_mode & 0x7F;
 	if (volumecontrol_use_subwoofer()) output_channels++;
 	return output_channels;
 }
 
-unsigned char volumecontrol_get_nr_channels() {
+uint8_t volumecontrol_get_nr_channels(void) {
 	return _volumecontrol_nr_channels;
 }
 
-void volumecontrol_init(unsigned char type) {
+void volumecontrol_init(uint8_t type) {
 	float offset;
-	unsigned char i;
+	uint8_t i;
 
 	_volumecontrol_type = type;
 	cs3318_reset_defaults();	// Reset the default chip-addresses
@@ -121,7 +126,8 @@ void volumecontrol_init(unsigned char type) {
 
 	HAFLER_RELAY = LOW;
 	HAFLER_RELAY_DIRECTION = INPUT_BIT;
-	delay_ms(1);
+    delay_ms(1);
+        
 	if (HAFLER_RELAY) info("VolumeControl8ch detected");
 	else if (!HAFLER_RELAY && offset > 0.2) info("VolumeControl detected");
 	else error("VolumeControl not detected");
@@ -143,7 +149,7 @@ void volumecontrol_init(unsigned char type) {
 		cs3318_write_register(0, CS3318_REG_MASTER_1_MASK, 0b11111111);	// Master channels
 		cs3318_write_register(0, CS3318_REG_MASTER_2_MASK, 0b00000000);	// Do not use
 		cs3318_write_register(0, CS3318_REG_MASTER_3_MASK, 0b00000000);	// Do not use
-		cs3318_set_device_id(0, 0b1100000); // Set new device-id for first device with enabled ENout
+		cs3318_set_device_id(0, 0b11000000); // Set new device-id for first device with enabled ENout
 		delay_ms(10);
 		_volumecontrol_nr_channels = 8;
 		_volumecontrol_nr_devices = 1;
@@ -154,7 +160,7 @@ void volumecontrol_init(unsigned char type) {
 		cs3318_write_register(0, CS3318_REG_MASTER_1_MASK, 0b11111111);	// Master channels
 		cs3318_write_register(0, CS3318_REG_MASTER_2_MASK, 0b00000000);	// Do not use
 		cs3318_write_register(0, CS3318_REG_MASTER_3_MASK, 0b00000000);	// Do not use
-		cs3318_set_device_id(0, 0b1100000); // Set new device-id for first device and enable next device
+		cs3318_set_device_id(0, 0b11000000); // Set new device-id for first device and enable next device
 		delay_ms(10);
 		cs3318_write_register(1, CS3318_REG_MASTER_POWER, 0b00000001);	// PDN_ALL=1
 		cs3318_write_register(1, CS3318_REG_DEVICE_CONFIG_1, 0b00100000);	// Enable MUTE input (active low)
@@ -162,7 +168,7 @@ void volumecontrol_init(unsigned char type) {
 		cs3318_write_register(1, CS3318_REG_MASTER_1_MASK, 0b11111111);	// Master channels
 		cs3318_write_register(1, CS3318_REG_MASTER_2_MASK, 0b00000000);	// Do not use
 		cs3318_write_register(1, CS3318_REG_MASTER_3_MASK, 0b00000000);	// Do not use
-		cs3318_set_device_id(1, 0b1110000); // Set new device-id for second device with enabled ENout
+		cs3318_set_device_id(1, 0b11100000); // Set new device-id for second device with enabled ENout
 		delay_ms(10);
 		_volumecontrol_nr_channels = 16;
 		_volumecontrol_nr_devices = 2;
@@ -190,66 +196,66 @@ void volumecontrol_init(unsigned char type) {
 	delay_ms(10);
 }
 
-void volumecontrol_set_hafler(unsigned char mode) {
+void volumecontrol_set_hafler(uint8_t mode) {
 	if (mode) HAFLER_RELAY = HIGH;
 	else HAFLER_RELAY = LOW;
 }
 
-void volumecontrol_mute() { 
+void volumecontrol_mute(void) { 
 	VOLUME_UNMUTE = 0;
 }
 
-void volumecontrol_unmute() { 
+void volumecontrol_unmute(void) { 
 	VOLUME_UNMUTE = 1;
 }
 
-void volumecontrol_mute_master1() {
-	unsigned char i;
+void volumecontrol_mute_master1(void) {
+	uint8_t i;
 
 	for(i=0;i<_volumecontrol_nr_devices;i++)
 		cs3318_write_register(i, CS3318_REG_MASTER_1_CONTROL, 0b00000010);	// Muted
 
 }
 
-void volumecontrol_unmute_master1() {
-	unsigned char i;
+void volumecontrol_unmute_master1(void) {
+	uint8_t i;
 
 	for(i=0;i<_volumecontrol_nr_devices;i++)
 		cs3318_write_register(i, CS3318_REG_MASTER_1_CONTROL, 0b00000000);	// Not muted
 
 }
 
-void volumecontrol_mute_master2() {
-	unsigned char i;
+void volumecontrol_mute_master2(void) {
+	uint8_t i;
 
 	for(i=0;i<_volumecontrol_nr_devices;i++)
 		cs3318_write_register(i, CS3318_REG_MASTER_2_CONTROL, 0b00000010);	// Muted
 
 }
 
-void volumecontrol_unmute_master2() {
-	unsigned char i;
+void volumecontrol_unmute_master2(void) {
+	uint8_t i;
 
 	for(i=0;i<_volumecontrol_nr_devices;i++)
 		cs3318_write_register(i, CS3318_REG_MASTER_2_CONTROL, 0b00000000);	// Not muted
 
 }
 
-void volumecontrol_mute_master3() {
-	unsigned char i;
+/*void volumecontrol_mute_master3(void) {
+	uint8_t i;
 
 	for(i=0;i<_volumecontrol_nr_devices;i++)
 		cs3318_write_register(i, CS3318_REG_MASTER_3_CONTROL, 0b00000010);	// Muted
 
-}
+}*/
 
-void volumecontrol_unmute_master3() {
-	unsigned char i;
+/*void volumecontrol_unmute_master3(void) {
+	uint8_t i;
 
 	for(i=0;i<_volumecontrol_nr_devices;i++)
 		cs3318_write_register(i, CS3318_REG_MASTER_3_CONTROL, 0b00000000);	// Not muted
 
-}
+}*/
 
 void volumecontrol_set_volume(short volume_half_db) {
 	if (_volumecontrol_type == VC_NORMAL) {
@@ -269,56 +275,71 @@ void volumecontrol_set_volume(short volume_half_db) {
 	}
 }
 
-static void volumecontrol_set_master1_volume(short volume_half_db) {
-	unsigned char regval, i;
+static void volumecontrol_set_master1_volume(int16_t volume_half_db) {
+	uint8_t regval, i;
 	char string[22];
 	sprintf(string, "set master1 vol: %d", volume_half_db);
 	debug(3, string);
 
-	regval = volumecontrol_limit(volume_half_db, VC_MIN_VOLUME, VC_MAX_VOLUME) + 210;
+    int16_t signed_regval = volumecontrol_limit(volume_half_db, VC_MIN_VOLUME, VC_MAX_VOLUME) + 210;
+    if (signed_regval < 255 && signed_regval > 0)
+    {
+        regval = (uint8_t)signed_regval;
 
-	for(i=0;i<_volumecontrol_nr_devices;i++)
-		cs3318_write_register(i, CS3318_REG_MASTER_1_VOLUME, regval);
+        for(i=0;i<_volumecontrol_nr_devices;i++)
+            cs3318_write_register(i, CS3318_REG_MASTER_1_VOLUME, regval);
+    }
 }
 
-static void volumecontrol_set_master2_volume(short volume_half_db) {
-	unsigned char regval, i;
+static void volumecontrol_set_master2_volume(int16_t volume_half_db) {
+	uint8_t regval, i;
 
-	regval = volumecontrol_limit(volume_half_db, VC_MIN_VOLUME, VC_MAX_VOLUME) + 210;
+    int16_t signed_regval = volumecontrol_limit(volume_half_db, VC_MIN_VOLUME, VC_MAX_VOLUME) + 210;
+    if (signed_regval < 255 && signed_regval > 0)
+    {
+        regval = (uint8_t)signed_regval;
 
-	for(i=0;i<_volumecontrol_nr_devices;i++)
-		cs3318_write_register(i, CS3318_REG_MASTER_2_VOLUME, regval);
+        for(i=0;i<_volumecontrol_nr_devices;i++)
+            cs3318_write_register(i, CS3318_REG_MASTER_2_VOLUME, regval);
+    }
 }
 
-static void volumecontrol_set_master3_volume(short volume_half_db) {
-	unsigned char regval, i;
+static void volumecontrol_set_master3_volume(int16_t volume_half_db) {
+	uint8_t regval, i;
 
-	regval = volumecontrol_limit(volume_half_db, VC_MIN_VOLUME, VC_MAX_VOLUME) + 210;
+    int16_t signed_regval = volumecontrol_limit(volume_half_db, VC_MIN_VOLUME, VC_MAX_VOLUME) + 210;
+    if (signed_regval < 255 && signed_regval > 0)
+    {
+        regval = (uint8_t)signed_regval;
 
-	for(i=0;i<_volumecontrol_nr_devices;i++)
-		cs3318_write_register(i, CS3318_REG_MASTER_3_VOLUME, regval);
+        for(i=0;i<_volumecontrol_nr_devices;i++)
+            cs3318_write_register(i, CS3318_REG_MASTER_3_VOLUME, regval);
+    }
 }
 
-void volumecontrol_set_channel_offset(unsigned char channel, short offset_half_db) {
-	unsigned char regval;
-	unsigned char device = channel / 8;
+void volumecontrol_set_channel_offset(uint8_t channel, int8_t offset_half_db) {
+	uint8_t regval;
+	uint8_t device = channel / 8;
 
 	if (channel >= _volumecontrol_nr_channels) return;
 
-	_volumecontrol_channel_offset[channel] = volumecontrol_limit(offset_half_db, VC_MIN_CHANNEL_OFFSET, VC_MAX_CHANNEL_OFFSET);
-	regval = _volumecontrol_channel_offset[channel] + 210;
+	_volumecontrol_channel_offset[channel] = (int8_t)volumecontrol_limit(offset_half_db, VC_MIN_CHANNEL_OFFSET, VC_MAX_CHANNEL_OFFSET);
+
+	regval = (uint8_t)(_volumecontrol_channel_offset[channel] + 210);
 
 	channel = channel % 8;
 	cs3318_write_register(device, CS3318_REG_CH1_VOLUME+channel, regval);
 }
 
-short volumecontrol_get_channel_offset(unsigned char channel) {
+
+int8_t volumecontrol_get_channel_offset(uint8_t channel) {
 	if (channel >= _volumecontrol_nr_channels) return 0;
 	return _volumecontrol_channel_offset[channel];
 }
 
-void volumecontrol_mute_channel(unsigned char channel) {
-	unsigned char device = channel / 8;
+
+void volumecontrol_mute_channel(uint8_t channel) {
+	uint8_t device = channel / 8;
 	channel = channel % 8;
 
 	_volumecontrol_mute_register[device] |= (1 << channel);	// Set the channel mute bit
@@ -327,8 +348,8 @@ void volumecontrol_mute_channel(unsigned char channel) {
 
 }
 
-void volumecontrol_unmute_channel(unsigned char channel) {
-	unsigned char device = channel / 8;
+void volumecontrol_unmute_channel(uint8_t channel) {
+	uint8_t device = channel / 8;
 	channel = channel % 8;
 
 	_volumecontrol_mute_register[device] &= ~(1 << channel);	// Clear the channel mute bit
@@ -336,45 +357,45 @@ void volumecontrol_unmute_channel(unsigned char channel) {
 	cs3318_write_register(device, CS3318_REG_MUTE_CONTROL, _volumecontrol_mute_register[device]);
 }
 
-unsigned char volumecontrol_has_signal_level() {
-	if (_volumecontrol_type == VC_NORMAL) return 1;
-	else return 0;
+bool volumecontrol_has_signal_level(void) {
+	if (_volumecontrol_type == VC_NORMAL) return true;
+	else return false;
 }
 
-unsigned char volumecontrol_has_headphones() {
-	if (_volumecontrol_type == VC_NORMAL) return 1;
-	else return 0;
+bool volumecontrol_has_headphones(void) {
+	if (_volumecontrol_type == VC_NORMAL) return true;
+	else return false;
 }
 
-static unsigned char volumecontrol_use_subwoofer() {
-	if (_volumecontrol_output_mode >= CH2_SUB) return 1;
-	else return 0;
+static bool volumecontrol_use_subwoofer(void) {
+	if (_volumecontrol_output_mode >= CH2_SUB) return true;
+	else return false;
 }
 
-static unsigned char volumecontrol_use_center() {
-	if ((_volumecontrol_output_mode & 0x7F) == CH3) return 1;
-	else if ((_volumecontrol_output_mode & 0x7F) == CH5) return 1;
-	else return 0;
+static bool volumecontrol_use_center(void) {
+	if ((_volumecontrol_output_mode & 0x7F) == CH3) return true;
+	else if ((_volumecontrol_output_mode & 0x7F) == CH5) return true;
+	else return false;
 }
 
-static unsigned char volumecontrol_use_rear() {
-	if ((_volumecontrol_output_mode & 0x7F) > CH3) return 1;
-	return 0;
+static bool volumecontrol_use_rear(void) {
+	if ((_volumecontrol_output_mode & 0x7F) > CH3) return true;
+	return false;
 }
 
-unsigned char volumecontrol_is_hafler_mode() {
-	if (_volumecontrol_type != VC_NORMAL) return 0;
-	if (_volumecontrol_input_mode == CH2) return 1;
-	else return 0;
-}
+/*bool volumecontrol_is_hafler_mode(void) {
+	if (_volumecontrol_type != VC_NORMAL) return false;
+	if (_volumecontrol_input_mode == CH2) return true;
+	else return false;
+}*/
 
-unsigned char volumecontrol_channel_in_use(unsigned char channel) {
+bool volumecontrol_channel_in_use(uint8_t channel) {
     if (_volumecontrol_type == VC_NORMAL) {
-	    if (channel==FRONT_LEFT || channel==FRONT_RIGHT) return 1;
-	    if (channel==HEADPHONE_LEFT || channel==HEADPHONE_RIGHT) return 1;
-	    if ((channel==REAR_LEFT || channel==REAR_RIGHT) && volumecontrol_use_rear()) return 1;
-	    if (channel == CENTER && volumecontrol_use_center()) return 1;
-	    if (channel==SUBWOOFER && volumecontrol_use_subwoofer()) return 1;
-    	return 0;
-    } else return 1;
+	    if (channel==FRONT_LEFT || channel==FRONT_RIGHT) return true;
+	    if (channel==HEADPHONE_LEFT || channel==HEADPHONE_RIGHT) return true;
+	    if ((channel==REAR_LEFT || channel==REAR_RIGHT) && volumecontrol_use_rear()) return true;
+	    if (channel == CENTER && volumecontrol_use_center()) return true;
+	    if (channel==SUBWOOFER && volumecontrol_use_subwoofer()) return true;
+    	return false;
+    } else return true;
 }

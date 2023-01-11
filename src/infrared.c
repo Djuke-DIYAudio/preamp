@@ -7,7 +7,7 @@ static ir_raw_t ir_raw;		// Raw received code timing data
 static ir_code_t ir_code;	// Interpreted code data
 
 static unsigned char accept_address = 0;	// Received address should equal accept_address for the code to be accepted
-static unsigned char accept_type = RC5;		// Received type should equal accept_type for the code to be accepted
+static unsigned char accept_type = PA_RC5;		// Received type should equal accept_type for the code to be accepted
 
 void ir_interrupt_handler(unsigned char value) {
 	static unsigned char ticks_since_transition = 0;
@@ -38,30 +38,31 @@ void ir_interrupt_handler(unsigned char value) {
 }
 
 // Raw data functions
-unsigned char ir_raw_value() { return ir_raw.previous_value; }
-unsigned char ir_raw_transitions() { return ir_raw.transitions; }
-unsigned char ir_raw_ticks(unsigned char at) { return ir_raw.ticks[at]; }
-unsigned short ir_raw_length() { return ir_raw.length; }
-unsigned char ir_raw_ready() { return ir_raw.ready; }
+//unsigned char ir_raw_value(void) { return ir_raw.previous_value; }
+//unsigned char ir_raw_transitions(void) { return ir_raw.transitions; }
+//unsigned char ir_raw_ticks(unsigned char at) { return ir_raw.ticks[at]; }
+//unsigned short ir_raw_length(void) { return ir_raw.length; }
+//unsigned char ir_raw_ready(void) { return ir_raw.ready; }
+
 
 // Interpreted code functions
-unsigned char ir_toggle_bit() { return ir_code.toggle; }				// Return last received toggle bit
-unsigned char ir_toggled() { return (ir_code.toggle!=ir_code.previous_toggle); }	// Toggle bit was changed
-unsigned char ir_address() { return ir_code.address; }					// Return last received address
-unsigned char ir_command() { return ir_code.command; }					// Return last received command
-unsigned short ir_data() { return ir_code.data; }					// Return last received data
-unsigned char ir_code_ready() { return ir_code.ready; }
-unsigned char ir_same_codes() { return ir_code.same_codes; }
+//unsigned char ir_toggle_bit(void) { return ir_code.toggle; }				// Return last received toggle bit
+//unsigned char ir_toggled(void) { return (ir_code.toggle!=ir_code.previous_toggle); }	// Toggle bit was changed
+unsigned char ir_address(void) { return ir_code.address; }					// Return last received address
+unsigned char ir_command(void) { return ir_code.command; }					// Return last received command
+//unsigned short ir_data(void) { return ir_code.data; }					// Return last received data
+//unsigned char ir_code_ready(void) { return ir_code.ready; }
+unsigned char ir_same_codes(void) { return ir_code.same_codes; }
 
-const char *ir_type_string() {
+const char *ir_type_string(void) {
 	switch(ir_code.type) {
-		case RC5: return "RC5";
-		case RC6: return "RC6";
+		case PA_RC5: return "RC5";
+		case PA_RC6: return "RC6";
 		default: return "?";
 	}
 }
 
-void ir_init() {
+void ir_init(void) {
 	ir_raw.transitions = 0;
 	ir_raw.ready = 0;
 	ir_raw.previous_value = 1;
@@ -74,26 +75,26 @@ void ir_init() {
 	ir_code.same_codes = 0;
 
 	ir_set_accept_address(0x00);	// TV
-	ir_set_accept_type(RC5);
+	ir_set_accept_type(PA_RC5);
 }
 
-char ir_receive() {
+int8_t ir_receive(void) {
 	if (ir_code.ready) {
 		ir_code.ready = 0;	// Do not process multiple times
 		if (ir_code.address != accept_address) return -2;
 		if (ir_code.type != accept_type) return -3;
-		return ir_code.command;
+		return (int8_t)ir_code.command;
 	} else return -1;
 }
 
 void ir_set_accept_address(unsigned char address) { accept_address = address; }
 void ir_set_accept_type(unsigned char type) { accept_type = type; }
 
-void ir_decode() {
+void ir_decode(void) {
 	if (ir_raw.length > RC5_MIN_LENGTH && ir_raw.length < RC5_MAX_LENGTH) rc5_decode();
 }
 
-static void rc5_decode() {
+static void rc5_decode(void) {
 	unsigned char i, value=1;   // Start value
 	unsigned char ticks=0;
 
@@ -132,7 +133,6 @@ static void rc5_decode() {
 	ir_code.toggle = (ir_code.data >> 11) & 0b1;
 	ir_code.address = (ir_code.data >> 6) & 0b11111;
 	ir_code.command += (ir_code.data) & 0b111111;
-	ir_code.type = RC5;
+	ir_code.type = PA_RC5;
 	ir_code.ready = 1;
-
 }

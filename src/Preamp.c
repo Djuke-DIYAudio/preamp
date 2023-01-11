@@ -18,9 +18,9 @@ volatile state_t _state;
 volatile settings_t _settings;
 
 // Preamp info
-const char *preamp_name() { return "Djuke PreAmplifier"; }
-const char *preamp_version() { return "v1.3"; }
-const char *preamp_date() { return "9 jul 2021"; }
+const char *preamp_name(void) { return "Djuke PreAmplifier"; }
+const char *preamp_version(void) { return "v1.4"; }
+const char *preamp_date(void) { return "11 jan 2023"; }
 
 // Input names
 const char input_names[][13] =
@@ -44,10 +44,10 @@ const char input_names[][13] =
 	"Video"
 };
 
-void update_volume()
+void update_volume(void)
 {
-	uint16_t volume;
-	uint8_t offset = get_input_offset(get_input());
+	int16_t volume;
+	int8_t offset = get_input_offset(get_input());
 	volume = get_volume() + offset;
 
 	if (get_input() > nr_inputs() || is_muted() || !is_powered()) {
@@ -75,9 +75,9 @@ void update_volume()
 	}
 }
 
-unsigned char get_nr_hw_setups() { return NR_HW_SETUPS; }	// Get number of default hw setups
+uint8_t get_nr_hw_setups(void) { return NR_HW_SETUPS; }	// Get number of default hw setups
 
-const char *hw_setup_name(unsigned char hw_setup) {
+const char *hw_setup_name(uint8_t hw_setup) {
 	switch(hw_setup)
 	{
 		case STEREO_INPUT: return "Stereo input?";
@@ -89,7 +89,7 @@ const char *hw_setup_name(unsigned char hw_setup) {
 	}
 }
 
-const char *hw_setup_value(unsigned char hw_setup) {
+const char *hw_setup_value(uint8_t hw_setup) {
 	switch(hw_setup)
 	{
 		case STEREO_INPUT: if (_settings.use_inputselect_pcb) return "yes"; else return "no";
@@ -104,7 +104,7 @@ const char *hw_setup_value(unsigned char hw_setup) {
 	}
 }
 
-void toggle_hw_setup(unsigned char hw_setup) {
+void toggle_hw_setup(uint8_t hw_setup) {
 	switch(hw_setup)
 	{
 		case STEREO_INPUT: _settings.use_inputselect_pcb = _settings.use_inputselect_pcb ? 0 : 1; break;
@@ -118,32 +118,34 @@ void toggle_hw_setup(unsigned char hw_setup) {
 	}
 }
 
-unsigned char settings_saved() { return _state.settings_saved; }
-void set_settings_saved(unsigned char saved) { _state.settings_saved = saved; }
-unsigned char is_powered() { return _state.powered; }
-void set_powered(unsigned char val) { _state.powered = val; }
-unsigned char is_muted() { return _state.muted; }
-void set_muted(unsigned char val) {
+bool settings_saved(void) { return _state.settings_saved; }
+void set_settings_saved(bool saved) { _state.settings_saved = saved; }
+bool is_powered(void) { return _state.powered; }
+void set_powered(bool val) { _state.powered = val; }
+bool is_muted(void) { return _state.muted; }
+
+void set_muted(bool val) {
 	_state.muted = val;
 	update_volume();
 	display_volume(0);
 }
-unsigned char is_enabled(unsigned char input) { return _settings.input[input].enabled; }
 
-void toggle_enabled(unsigned char input) {
+bool is_enabled(uint8_t input) { return _settings.input[input].enabled; }
+
+void toggle_enabled(uint8_t input) {
 	if (_settings.input[input].enabled) _settings.input[input].enabled = 0;
 	else _settings.input[input].enabled = 1;
 	set_settings_saved(0);
 }
 
-unsigned char nr_inputs() { return _settings.nr_inputs; }
-unsigned char get_input_type() { return _settings.input[get_input()].type; }
-unsigned char get_analog_select() { return _settings.input[get_input()].analog_select; }
-unsigned char get_dac_select() { return _settings.input[get_input()].dac_select; }
-unsigned char get_input() { return _state.current_input; }
+uint8_t nr_inputs(void) { return _settings.nr_inputs; }
+uint8_t get_input_type(void) { return _settings.input[get_input()].type; }
+uint8_t get_analog_select(void) { return _settings.input[get_input()].analog_select; }
+uint8_t get_dac_select(void) { return _settings.input[get_input()].dac_select; }
+uint8_t get_input(void) { return _state.current_input; }
 
-void set_input(unsigned char val) {
-	unsigned char i;
+void set_input(uint8_t val) {
+	uint8_t i;
 
 	if (val > _settings.nr_inputs) return;
 	if (_settings.input[val].enabled) {
@@ -165,9 +167,9 @@ void set_input(unsigned char val) {
 	}
 }
 
-unsigned char next_input() {
-	unsigned char start_input = get_input();
-	unsigned char new_input = start_input;
+uint8_t next_input(void) {
+	uint8_t start_input = get_input();
+	uint8_t new_input = start_input;
 
 	if (!is_powered()) return start_input;
 
@@ -179,9 +181,9 @@ unsigned char next_input() {
 	return get_input();
 }
 
-unsigned char previous_input() {
-	unsigned char start_input = get_input();
-	unsigned char new_input = start_input;
+uint8_t previous_input(void) {
+	uint8_t start_input = get_input();
+	uint8_t new_input = start_input;
 
 	if (!is_powered()) return start_input;
 
@@ -193,32 +195,31 @@ unsigned char previous_input() {
 	return get_input();
 }
 
-unsigned char input_changed() {
-	static unsigned char prev_input = 255;
-	unsigned char input = get_input();
+bool input_changed(void) {
+	static uint8_t prev_input = 255;
+	uint8_t input = get_input();
 	if (input != prev_input) {
 		prev_input = input;
-		return 1;
+		return true;
 	} else {
 		prev_input = input;
-		return 0;
+		return false;
 	}
 }
 
-unsigned char is_dac_input() {
-	unsigned char type = get_input_type();
-	if (type >= DAC1 && type <= DAC8) return 1;
-	else return 0;
+bool is_dac_input(void) {
+	uint8_t type = get_input_type();
+	if (type >= DAC1 && type <= DAC8) return true;
+	else return false;
 }
 
-unsigned char is_analog_input() {
-	unsigned char type = get_input_type();
-	if (type >= ANALOG1 && type <= ANALOG8) return 1;
-	else return 0;
+bool is_analog_input(void) {
+	uint8_t type = get_input_type();
+	if (type >= ANALOG1 && type <= ANALOG8) return true;
+	else return false;
 }
 
-
-int16_t get_volume() {
+int16_t get_volume(void) {
 	return _state.volume;
 }
 
@@ -237,8 +238,9 @@ void add_volume(signed char val) {
    set_volume(vol);
 }
 
-const char *volume_string() {
-	char string[8];
+const char *volume_string(void) {
+	// JF char string[8];
+    static char string[8];
 	short volume = get_volume();
 	char muted = is_muted();
 
@@ -256,23 +258,23 @@ const char *volume_string() {
 	return string;
 }
 
-unsigned char has_volume_control() {
-	if (_settings.use_cs3318_volumecontrol_pcb) return 1;
-	if (_settings.use_dac_pcb) return 1;
-	else return 0;
+bool has_volume_control(void) {
+	if (_settings.use_cs3318_volumecontrol_pcb) return true;
+	if (_settings.use_dac_pcb) return true;
+	else return false;
 }
 
-unsigned char has_signal_level() {
+bool has_signal_level(void) {
 	if (_settings.use_cs3318_volumecontrol_pcb) return volumecontrol_has_signal_level();
-	else return 0;
+	else return false;
 }
 
-unsigned char has_headphones() {
-	if (_settings.use_cs3318_volumecontrol_pcb && volumecontrol_has_headphones()) return 1;
-	else return 0;
+bool has_headphones(void) {
+	if (_settings.use_cs3318_volumecontrol_pcb && volumecontrol_has_headphones()) return true;
+	else return false;
 }
 
-unsigned char nr_channels() {
+uint8_t nr_channels(void) {
 	if (_settings.use_cs3318_volumecontrol_pcb) return volumecontrol_get_nr_channels();
 	else if (_settings.use_dac_pcb) return dac_get_nr_channels();
 	else if (_settings.use_multi_input_pcb) return 6;
@@ -280,13 +282,13 @@ unsigned char nr_channels() {
 	else return 0;
 }
 
-unsigned char get_nr_output_channels() {
+uint8_t get_nr_output_channels(void) {
 	if (_settings.use_cs3318_volumecontrol_pcb) return volumecontrol_get_nr_output_channels();
 	if (_settings.use_dac_pcb) return dac_get_nr_channels();
 	else return 0;
 }
 
-int8_t get_channel_offset(unsigned char channel) {
+int8_t get_channel_offset(uint8_t channel) {
 	int8_t offset;
 	if (channel >= nr_channels()) return 0;
 	offset = _settings.channel[channel].offset;
@@ -294,14 +296,14 @@ int8_t get_channel_offset(unsigned char channel) {
 	return offset;
 }
 
-void add_channel_offset(unsigned char channel, int8_t offset) {
+void add_channel_offset(uint8_t channel, int8_t offset) {
 	int8_t new_offset;
 	if (channel >= nr_channels()) return;
 	new_offset = _settings.channel[channel].offset + offset;
 	set_channel_offset(channel, new_offset);
 }
 
-void set_channel_offset(unsigned char channel, int8_t offset) {
+void set_channel_offset(uint8_t channel, int8_t offset) {
 	if (_settings.use_cs3318_volumecontrol_pcb) {
 		volumecontrol_set_channel_offset(channel, offset);
 		_settings.channel[channel].offset = volumecontrol_get_channel_offset(channel);
@@ -314,10 +316,10 @@ void set_channel_offset(unsigned char channel, int8_t offset) {
 	}
 }
 
-int8_t get_current_input_offset() { return _settings.input[get_input()].offset; }
-int8_t get_input_offset(unsigned char input) { return _settings.input[input].offset; }
+//int8_t get_current_input_offset(void) { return _settings.input[get_input()].offset; }
+int8_t get_input_offset(uint8_t input) { return _settings.input[input].offset; }
 
-void add_input_offset(unsigned char input, int8_t offset) {
+void add_input_offset(uint8_t input, int8_t offset) {
 	_settings.input[input].offset += offset;
 	if (_settings.input[input].offset < -MAX_INPUT_OFFSET) _settings.input[input].offset = -MAX_INPUT_OFFSET;
 	if (_settings.input[input].offset > MAX_INPUT_OFFSET) _settings.input[input].offset = MAX_INPUT_OFFSET;
@@ -325,10 +327,10 @@ void add_input_offset(unsigned char input, int8_t offset) {
 	update_volume();
 }
 
-unsigned char get_current_input_mode() { return _settings.input[get_input()].input_mode; }
-unsigned char get_current_output_mode() { return _settings.input[get_input()].output_mode; }
+uint8_t get_current_input_mode(void) { return _settings.input[get_input()].input_mode; }
+uint8_t get_current_output_mode(void) { return _settings.input[get_input()].output_mode; }
 
-void set_current_output_mode(unsigned char channels) {
+void set_current_output_mode(uint8_t channels) {
 	_settings.input[get_input()].output_mode = channels;
 	set_settings_saved(0);
 	if (_settings.use_cs3318_volumecontrol_pcb) volumecontrol_set_output_mode(channels);
@@ -336,12 +338,12 @@ void set_current_output_mode(unsigned char channels) {
 	display_volume(1);
 }
 
-unsigned char next_output_mode() {
+uint8_t next_output_mode(void) {
 	if (_settings.use_cs3318_volumecontrol_pcb) set_current_output_mode(volumecontrol_next_output_mode());
 	return get_current_output_mode();
 }
 
-signed char get_output_mode_offset(unsigned char channel) {
+/*signed char get_output_mode_offset(uint8_t channel) {
 	if (_settings.use_cs3318_volumecontrol_pcb) {
 		if (volumecontrol_is_hafler_mode()) {
 			if (channel==REAR_LEFT || channel==REAR_RIGHT) return -5;
@@ -349,19 +351,20 @@ signed char get_output_mode_offset(unsigned char channel) {
 		}
 	}
 	return 0;
-}
+}*/
 
-const char *output_channel_string() { return channel_string(get_current_output_mode()); }
-const char *input_channel_string() { return channel_string(get_current_input_mode()); }
+const char *output_channel_string(void) { return channel_string(get_current_output_mode()); }
+const char *input_channel_string(void) { return channel_string(get_current_input_mode()); }
 
-const char *channel_string(unsigned char channels) {
+const char *channel_string(uint8_t channels) {
 	return volumecontrol_channel_string(channels);
 }
 
-unsigned char get_checksum() { return _state.checksum; }
-unsigned char get_current_input_type() { return _settings.input[get_input()].type; }
+//uint8_t get_checksum(void) { return _state.checksum; }
 
-const char *input_type_string(unsigned char input) {
+//uint8_t get_current_input_type(void) { return _settings.input[get_input()].type; }
+
+const char *input_type_string(uint8_t input) {
 	switch(_settings.input[input].type)
 	{
 		case DAC1:	return "dac1";
@@ -384,44 +387,44 @@ const char *input_type_string(unsigned char input) {
 	}
 }
 
-const char *input_name_string(unsigned char input) {
+const char *input_name_string(uint8_t input) {
 	if (_settings.input[input].name < NR_INPUT_NAMES) return input_names[_settings.input[input].name];
 	else return "?";
 }
 
-const char *channel_name_string(unsigned char channel) {
+const char *channel_name_string(uint8_t channel) {
 	return volumecontrol_channel_name_string(channel);
 }
 
-void change_input_name(unsigned char input, signed char change) {
+void change_input_name(uint8_t input, signed char change) {
 	signed char new_input = _settings.input[input].name + change;
 	if (new_input < 0) new_input = NR_INPUT_NAMES-1;
 	if (new_input > NR_INPUT_NAMES-1) new_input = 0;
-	_settings.input[input].name = (unsigned char)new_input;
+	_settings.input[input].name = (uint8_t)new_input;
 	set_settings_saved(0);
 }
 
-char load_input()
+/*int8_t load_input(void)
 {
-	unsigned char input = eeprom_read(EEP_CURRENT_INPUT);	// Read current input from eeprom
+	uint8_t input = PA_eeprom_read(EEP_CURRENT_INPUT);	// Read current input from eeprom
 	if (input > nr_inputs()-1) return -1;
 	set_input(input);
 	return 0;
-}
+}*/
 
-void save_input()
+void save_input(void)
 {
-	eeprom_write(EEP_CURRENT_INPUT, get_input());
+	PA_eeprom_write(EEP_CURRENT_INPUT, get_input());
 }
 
-char load_settings()
+int8_t load_settings(void)
 {
 	char string[21];
-	unsigned char cksum;
+	uint8_t cksum;
 
-	eeprom_bulkread(EEP_DATA, &_settings, sizeof(settings_t));
-	_state.checksum = eeprom_read(EEP_CHECKSUM);		// Read checksum in eeprom
-	cksum = checksum(&_settings, sizeof(settings_t));	// Compute checksom
+	PA_eeprom_bulkread(EEP_DATA, (void*)&_settings, sizeof(settings_t));
+	_state.checksum = PA_eeprom_read(EEP_CHECKSUM);		// Read checksum in eeprom
+	cksum = checksum((void*)&_settings, sizeof(settings_t));	// Compute checksom
 	if (_state.checksum != cksum) {
 		clear_settings();
 		return -1;
@@ -432,29 +435,33 @@ char load_settings()
 	return 0;
 }
 
-void save_settings()
+void save_settings(void)
 {
 	char string[21];
 
-	unsigned char cksum;
+	uint8_t cksum;
 	if (!settings_saved()) {
-		eeprom_bulkwrite(EEP_DATA, &_settings, sizeof(settings_t));
-		cksum = checksum(&_settings, sizeof(settings_t));
-		eeprom_write(EEP_CHECKSUM, cksum);
+		// JF eeprom_bulkwrite(EEP_DATA, &_settings, sizeof(settings_t));
+		PA_eeprom_bulkwrite(EEP_DATA, (void*)&_settings, sizeof(settings_t));
+		// JF cksum = checksum(&_settings, sizeof(settings_t));
+		cksum = checksum((void*)&_settings, sizeof(settings_t));
+		// JF eeprom_write(EEP_CHECKSUM, cksum);
+		PA_eeprom_write(EEP_CHECKSUM, cksum);
 		set_settings_saved(1);
 		sprintf(string, "%d bytes -> eeprom", sizeof(settings_t));
 		debug(2, string);
 	}
 }
 
-void clear_settings()
+void clear_settings(void)
 {
-	memset(&_settings, 0 , sizeof(settings_t));
+	// JF memset(&_settings, 0 , sizeof(settings_t));
+	memset((void*)&_settings, 0 , sizeof(settings_t));
 
 	default_settings();
 }
 
-void setup_settings(unsigned char hw_type)
+void setup_settings(uint8_t hw_type)
 {
 	if (hw_type == 0) return;
 
@@ -475,9 +482,9 @@ void setup_settings(unsigned char hw_type)
 	default_settings();
 }
 
-void default_settings()
+void default_settings(void)
 {
-	unsigned char i;
+	uint8_t i;
 
 	// Determine the signal routing from the used pcb's
 	if (_settings.use_inputselect_pcb) {
@@ -613,21 +620,21 @@ void default_settings()
 	_settings.parameter[LCD_DELAY].value = 0;
 	_settings.parameter[LCD_WIDTH].value = 20;
 
-	_state.checksum = checksum(&_settings, sizeof(settings_t));	// Compute checksom
+	_state.checksum = checksum((void*)&_settings, sizeof(settings_t));	// Compute checksom
 	set_settings_saved(0);		// Default settings will be stored in eeprom when powered off
 }
 
-void preamp_init()
+void preamp_init(void)
 {
-	memset(&_settings, 0 , sizeof(settings_t));
+	memset((void*)&_settings, 0 , sizeof(settings_t));
 	_state.muted = 0;
 	_state.powered = 0;			// Initialise
 	_state.current_input = 0;
 }
 
-void preamp_on()
+void preamp_on(void)
 {
-	unsigned char ir_address = get_parameter(IR_ADDRESS);
+	uint8_t ir_address = (uint8_t)get_parameter(IR_ADDRESS);
 
 	if (_settings.use_dac_pcb) dac_init();
 	if (_settings.use_cs3318_volumecontrol_pcb) volumecontrol_init(_settings.cs3318_type);
@@ -644,7 +651,7 @@ void preamp_on()
 	update_volume();
 }
 
-void preamp_off()
+void preamp_off(void)
 {
 	if (_settings.use_cs3318_volumecontrol_pcb) {
 		volumecontrol_mute();
@@ -656,26 +663,26 @@ void preamp_off()
 	set_powered(0);
 }
 
-unsigned char checksum(void *dat, unsigned char len)
+uint8_t checksum(void *dat, uint8_t len)
 {
-	unsigned short sum = 0xff;
-	unsigned char i;
+	uint16_t sum = 0xff;
+	uint8_t i;
 
 	for(i=0;i<len;i++) {
 		sum ^= ((char *)dat)[i];
 		sum -= i;
 	}
 	sum = (sum & 0xff) + (sum >> 8);
-	return (unsigned char)sum;
+	return (uint8_t)sum;
 }
 
-signed short get_parameter(unsigned char par) {
+int16_t get_parameter(uint8_t par) {
 	if (par >= MAX_PARAMETER) return 0;
 
 	return _settings.parameter[par].value;
 }
 
-void set_parameter(unsigned char par, signed short value) {
+void set_parameter(uint8_t par, signed short value) {
 	signed short min_value, max_value;
 
 	switch(par) {
@@ -709,13 +716,13 @@ void set_parameter(unsigned char par, signed short value) {
 	set_settings_saved(0);
 }
 
-void change_parameter(unsigned char par, signed char change) {
+void change_parameter(uint8_t par, int8_t change) {
 	if (par >= MAX_PARAMETER) return;
 
 	set_parameter(par, _settings.parameter[par].value+change);
 }
 
-const char *get_parameter_name(unsigned char par) {
+const char *get_parameter_name(uint8_t par) {
 	switch(par) {
 		case VOLUME_POWERUP: return "Powerup volume";
 		case AUTO_OFF_MINUTES: return "Auto-off time";
@@ -726,7 +733,7 @@ const char *get_parameter_name(unsigned char par) {
 	}
 }
 
-const char *get_parameter_cmd_name(unsigned char par) {
+const char *get_parameter_cmd_name(uint8_t par) {
 	switch(par) {
 		case VOLUME_POWERUP: return "vol-powerup";
 		case AUTO_OFF_MINUTES: return "time-auto-off";
@@ -737,7 +744,7 @@ const char *get_parameter_cmd_name(unsigned char par) {
 	}
 }
 
-const char *get_parameter_unit(unsigned char par) {
+const char *get_parameter_unit(uint8_t par) {
 	switch(par) {
 		case VOLUME_POWERUP: return "dB";
 		case AUTO_OFF_MINUTES: return "min";
@@ -748,4 +755,4 @@ const char *get_parameter_unit(unsigned char par) {
 	}
 }
 
-unsigned char nr_parameters() { return MAX_PARAMETER; }
+uint8_t nr_parameters(void) { return MAX_PARAMETER; }

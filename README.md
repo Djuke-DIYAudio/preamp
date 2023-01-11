@@ -22,7 +22,23 @@ This is the C source code for a modular preamplifier, so the features depend a l
 
 ## Building
 
-Building the software is done in Linux and requires SDCC (small device C Compiler) to be installed. Because the non-free pic16 is typically not included in SDCC from major Linux distributions it is advised to download it from the [SDCC homepage](http://sdcc.sourceforge.net)
+### XC8 (from v1.4)
+Newer firmware is built using the free Microchip XC8 C compiler (I use v2.40 on Linux). Download and install it from the [XC8 download page](https://www.microchip.com/en-us/tools-resources/develop/mplab-xc-compilers/downloads-documentation#XC8).
+
+#### Command line
+From the project directory, simply run:
+
+```
+make
+```
+
+If no errors occurred, this will result in `dist/default/production/preamp.X.production.hex` being generated.
+
+#### MPLAB X IDE
+If desired, the source code can be developed using the Microchip MPLAB IDE.
+
+### SDCC (up to v1.3)
+Building the software for earlier versions is done in Linux and requires SDCC (small device C Compiler) to be installed. Because the non-free pic16 is typically not included in SDCC from major Linux distributions it is advised to download it from the [SDCC homepage](http://sdcc.sourceforge.net)
 
 From the source code directory, simply run:
 
@@ -30,7 +46,7 @@ From the source code directory, simply run:
 make
 ```
 
-If no errors occurred, this will result in DjukePreampV2.hex being generated. Temporary files can be removed using:
+If no errors occurred, this will result in `DjukePreampV2.hex` being generated. Temporary files can be removed using:
 
 ```
 make clean

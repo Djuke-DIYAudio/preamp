@@ -2,7 +2,7 @@
 // http://www.codeproject.com/Articles/34675/C-Programming-for-Embedded-System
 
 /* Application event handler function pointer */
-typedef void (*tEventHandler)();
+typedef void (*tEventHandler)(void);
 
 /* Link-list definition */
 typedef struct TaskRecord

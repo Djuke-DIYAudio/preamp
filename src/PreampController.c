@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
-#include <malloc.h>
 
 #include "PreampController.h"
 #include "InputSelect.h"
@@ -18,22 +16,11 @@
 #include "EventHandler.h"
 
 // Device configuration bits
-/*__code char __at __CONFIG1H CONFIG1H = _OSC_HSPLL_1H & _FCMEN_ON_1H & _IESO_OFF_1H;
-__code char __at __CONFIG2L CONFIG2L = _PWRT_ON_2L & _BOREN_OFF_2L & _BORV_28_2L;
-__code char __at __CONFIG2H CONFIG2H = _WDT_DISABLED_CONTROLLED_2H & _WDTPS_1_32768_2H;
-__code char __at __CONFIG3H CONFIG3H = _CCP2MUX_RC1_3H & _PBADEN_PORTB_4_0__CONFIGURED_AS_DIGITAL_I_O_ON_RESET_3H & _LPT1OSC_OFF_3H & _MCLRE_MCLR_ON_RE3_OFF_3H;
-__code char __at __CONFIG4L CONFIG4L = _STVR_OFF_4L & _LVP_OFF_4L & _XINST_OFF_4L & _DEBUG_OFF_4L;
-__code char __at __CONFIG5L CONFIG5L = _CP_0_OFF_5L & _CP_1_OFF_5L & _CP_2_OFF_5L & _CP_3_OFF_5L;
-__code char __at __CONFIG5H CONFIG5H = _CPB_OFF_5H & _CPD_OFF_5H;
-__code char __at __CONFIG6L CONFIG6L = _WRT_0_OFF_6L & _WRT_1_OFF_6L & _WRT_2_OFF_6L & _WRT_3_OFF_6L;
-__code char __at __CONFIG6H CONFIG6H = _WRTC_OFF_6H & _WRTB_OFF_6H & _WRTD_OFF_6H;
-__code char __at __CONFIG7L CONFIG7L = _EBTR_0_OFF_7L & _EBTR_1_OFF_7L & _EBTR_2_OFF_7L & _EBTR_3_OFF_7L;
-__code char __at __CONFIG7H CONFIG7H = _EBTRB_OFF_7H;*/
-#pragma config OSC=HSPLL,FCMEN=ON,IESO=OFF
-#pragma config PWRT=ON,BOREN=OFF,BORV=1
-#pragma config WDT=OFF,WDTPS=1
+#pragma config OSC=HSPLL,FCMEN=OFF,IESO=OFF
+#pragma config PWRT=ON,BOREN=ON,BORV=2
+#pragma config WDT=OFF,WDTPS=128
 #pragma config MCLRE=ON,LPT1OSC=OFF,CCP2MX=PORTC,PBADEN=OFF
-#pragma config STVREN=OFF,LVP=OFF,XINST=OFF,DEBUG=OFF
+#pragma config STVREN=ON,LVP=OFF,XINST=OFF,DEBUG=OFF
 #pragma config CP0=OFF,CP1=OFF,CP2=OFF,CP3=OFF
 #pragma config CPB=OFF,CPD=OFF
 #pragma config WRT0=OFF,WRT1=OFF,WRT2=OFF,WRT3=OFF
@@ -41,60 +28,43 @@ __code char __at __CONFIG7H CONFIG7H = _EBTRB_OFF_7H;*/
 #pragma config EBTR0=OFF,EBTR1=OFF,EBTR2=OFF,EBTR3=OFF
 #pragma config EBTRB=OFF
 
-// Pragmas
-#pragma stack 0x200 256
-
 // Interrupt service routine
 #define TIMER1_TICKS_PER_SECOND		19		// CLOCK_FREQ/(4*65536*2)
 #define TIMER1_TITLE_TICKS		5				// About 4x per second
-volatile unsigned char _timer0_ticks = 0;		// Number of ticks
-volatile unsigned char _timer1_ticks = 0;		// Number of ticks
-volatile unsigned char _timer1_title_ticks = 0;		// Number of ticks for title update
-volatile unsigned char _timer1_seconds = 0;		// Number of seconds
-volatile unsigned char _timer1_minutes = 0;		// Number of minutes
+volatile uint8_t _timer0_ticks = 0;		// Number of ticks
+volatile uint8_t _timer1_ticks = 0;		// Number of ticks
+volatile uint8_t _timer1_title_ticks = 0;		// Number of ticks for title update
+volatile uint8_t _timer1_seconds = 0;		// Number of seconds
+volatile uint8_t _timer1_minutes = 0;		// Number of minutes
 volatile float _signal_level = 0;			// Signal level (in Volt)
 volatile float _signal_offset = 0.0;			// Signal offset (in Volt)
-volatile unsigned char _silent_ticks = 0;		// Number of ticks that no signal is detected
-volatile unsigned char _silent_seconds = 0;		// Amount of seconds that no signal is detected
-volatile unsigned char _silent_minutes = 0;		// Amount of minutes that no signal is detected
-volatile unsigned char _standby_seconds = 0;		// Standby time in seconds
-volatile unsigned char _standby_minutes = 0;		// Standby time in minutes
-volatile unsigned char _standby_hours = 0;		// Standby time in hours
-volatile unsigned char _standby_days = 0;		// Standby time in days
-volatile unsigned char _on_seconds = 0;			// On time in seconds
-volatile unsigned char _on_minutes = 0;			// On time in minutes
-volatile unsigned char _on_hours = 0;			// On time in hours
-volatile unsigned char _on_days = 0;			// On time in days
-volatile unsigned char _encoder_counter = 0;		// Encoder counter
+volatile uint8_t _silent_ticks = 0;		// Number of ticks that no signal is detected
+volatile uint8_t _silent_seconds = 0;		// Amount of seconds that no signal is detected
+volatile uint8_t _silent_minutes = 0;		// Amount of minutes that no signal is detected
+volatile uint8_t _standby_seconds = 0;		// Standby time in seconds
+volatile uint8_t _standby_minutes = 0;		// Standby time in minutes
+volatile uint8_t _standby_hours = 0;		// Standby time in hours
+volatile uint8_t _standby_days = 0;		// Standby time in days
+volatile uint8_t _on_seconds = 0;			// On time in seconds
+volatile uint8_t _on_minutes = 0;			// On time in minutes
+volatile uint8_t _on_hours = 0;			// On time in hours
+volatile uint8_t _on_days = 0;			// On time in days
+volatile uint8_t _encoder_counter = 0;		// Encoder counter
 
-DEF_INTHIGH(high_int)
-DEF_HANDLER(SIG_TMR0, tmr0_handler)		// Encoder, infrared timing
-DEF_HANDLER(SIG_LVD, lvd_handler)		// Loss of power
-DEF_HANDLER(SIG_RC, rx_handler)			// UART receive
-END_DEF
-
-DEF_INTLOW(low_int)
-DEF_HANDLER(SIG_TMR1, tmr1_handler)		// Trigger A/D conversion, on/standby time
-DEF_HANDLER(SIG_AD, ad_handler)			// Signal level
-//DEF_HANDLER(SIG_TX, tx_handler)			// UART transmit
-END_DEF
-
-SIGHANDLER(ad_handler)
+void ad_handler(void)
 {
 	// Signal level
-	unsigned char level = ADRESH;
-	float voltage_level = level * (5.0/256.0);	// AD register count = Vout/5*256
+	uint8_t level = ADRESH;
+	float voltage_level = level * (5.0f/256);	// AD register count = Vout/5*256
 
-	_signal_offset = 0.01 * voltage_level + 0.99 * _signal_offset;	// Moving average filter to determine offset
-	if (_signal_offset > 0.5) _signal_offset = 0.5;
+	_signal_offset = 0.01f * voltage_level + 0.99f * _signal_offset;	// Moving average filter to determine offset
+	if (_signal_offset > 0.5f) _signal_offset = 0.5f;
 	_signal_level = voltage_level - _signal_offset;			// Change in signal level
-
-	PIR1bits.ADIF = 0;
 }
 
-SIGHANDLER(tmr0_handler)
+void tmr0_handler(void)
 {
-	static unsigned char _enc_a = 1;
+	static uint8_t _enc_a = 1;
 
 	_timer0_ticks++;
 	// Update encoder register
@@ -110,13 +80,11 @@ SIGHANDLER(tmr0_handler)
 	// Update infrared timing data
 	// At half the interrupt rate (every 102.4us instead of 51.2us)
 	if (_timer0_ticks % 2) ir_interrupt_handler(IR==1?1:0);
-
-	INTCONbits.TMR0IF = 0;		// Clear interrupt flag
 }
 
-SIGHANDLER(tmr1_handler)
+void tmr1_handler(void)
 {
-	unsigned char auto_off_minutes = get_parameter(AUTO_OFF_MINUTES);
+	uint16_t auto_off_minutes = (uint16_t)get_parameter(AUTO_OFF_MINUTES);
 
 	_timer1_ticks++;
 	if (_timer1_ticks >= TIMER1_TICKS_PER_SECOND) {
@@ -173,14 +141,15 @@ SIGHANDLER(tmr1_handler)
    }
 
 	if (!ADCON0bits.GO) ADCON0bits.GO = 1; // Trigger A/D conversion
-	PIR1bits.TMR1IF = 0;		// Clear interrupt flag
 }
 
-SIGHANDLER(lvd_handler)
+void lvd_handler(void)
 {
 	if (is_powered()) {
 		volumecontrol_mute();
+        
 		delay_ms(16);
+        
 		SSPCON1bits.SSPEN = 0; // Disable serial port
 		POWER = 0;
 		inputselect_set_input(0);
@@ -190,21 +159,20 @@ SIGHANDLER(lvd_handler)
 	}
 	save_input();
 //	save_settings();	// Temporarily switched off
-	PIR2bits.HLVDIF = 0;		// Clear interrupt flag
 }
 
-SIGHANDLER(rx_handler)
+void rx_handler(void)
 {
 	term_receive(RCREG);
-	PIR1bits.RCIF = 0;		// Clear interrupt flag
 }
 
-unsigned char get_timer0_ticks() { return _timer0_ticks; }
-unsigned char get_timer1_seconds() { return _timer1_seconds; }
-unsigned char get_timer1_minutes() { return _timer1_minutes; }
-unsigned char get_silent_minutes() { return _silent_minutes; }
-unsigned char get_silent_seconds() { return _silent_seconds; }
-void reset_silent_counter() {
+//uint8_t get_timer0_ticks(void) { return _timer0_ticks; }
+//uint8_t get_timer1_seconds(void) { return _timer1_seconds; }
+//uint8_t get_timer1_minutes(void) { return _timer1_minutes; }
+uint8_t get_silent_minutes(void) { return _silent_minutes; }
+uint8_t get_silent_seconds(void) { return _silent_seconds; }
+
+void reset_silent_counter(void) {
 	INTCONbits.GIE = 0;	// Disable interrupts
 	// Reset silent time values
 	_silent_ticks = 0;
@@ -214,16 +182,16 @@ void reset_silent_counter() {
 
 }
 
-unsigned char get_standby_seconds() { return _standby_seconds; }
-unsigned char get_standby_minutes() { return _standby_minutes; }
-unsigned char get_standby_hours() { return _standby_hours; }
-unsigned char get_standby_days() { return _standby_days; }
-unsigned char get_on_seconds() { return _on_seconds; }
-unsigned char get_on_minutes() { return _on_minutes; }
-unsigned char get_on_hours() { return _on_hours; }
-unsigned char get_on_days() { return _on_days; }
+uint8_t get_standby_seconds(void) { return _standby_seconds; }
+uint8_t get_standby_minutes(void) { return _standby_minutes; }
+uint8_t get_standby_hours(void) { return _standby_hours; }
+uint8_t get_standby_days(void) { return _standby_days; }
+uint8_t get_on_seconds(void) { return _on_seconds; }
+uint8_t get_on_minutes(void) { return _on_minutes; }
+uint8_t get_on_hours(void) { return _on_hours; }
+uint8_t get_on_days(void) { return _on_days; }
 
-float get_signal_offset() {
+float get_signal_offset(void) {
 	float offset;
 	INTCONbits.GIE = 0;	// Disable interrupts
 	offset = _signal_offset;
@@ -231,7 +199,7 @@ float get_signal_offset() {
 	return offset;
 }
 
-float get_signal_level() {
+float get_signal_level(void) {
 	float level;
 	INTCONbits.GIE = 0;	// Disable interrupts
 	level = _signal_level;
@@ -239,53 +207,53 @@ float get_signal_level() {
 	return level;
 }
 
-unsigned char signal_level_changed() {
+bool signal_level_changed(void) {
 	static float prev_level = 0;
 	float level = get_signal_level();
 	if (level > prev_level+0.1 || level < prev_level-0.1) {
 		prev_level = level;
-		return 1;
-	} else return 0;
+		return true;
+	} else return false;
 }
 
-unsigned char headphones_connected() {
-	unsigned char connected;
-	connected = (HEADPHONES ? 1 : 0);
+bool headphones_connected(void) {
+	bool connected;
+	connected = (HEADPHONES ? true : false);
 	return connected;
 }
 
-unsigned char headphones_connected_changed() {
-	static unsigned char prev_hp_connected = 0;
-	unsigned char hp_connected = headphones_connected();
+bool headphones_connected_changed(void) {
+	static bool prev_hp_connected = false;
+	bool hp_connected = headphones_connected();
 	if (hp_connected != prev_hp_connected) {
 		prev_hp_connected = hp_connected;
-		return 1;
+		return true;
 	} else {
 		prev_hp_connected = hp_connected;
-		return 0;
+		return false;
 	}
 }
 
-unsigned char get_encoder_counter() { return _encoder_counter; }
+uint8_t get_encoder_counter(void) { return _encoder_counter; }
 
-unsigned char encoder_counter_changed() {
-	static unsigned char prev_encoder_counter = 0;
-	unsigned char encoder_counter = _encoder_counter;
+bool encoder_counter_changed(void) {
+	static uint8_t prev_encoder_counter = 0;
+	uint8_t encoder_counter = _encoder_counter;
 	if (encoder_counter != prev_encoder_counter) {
 		prev_encoder_counter = encoder_counter;
-		return 1;
-	} else return 0;
+		return true;
+	} else return false;
 }
 
-signed char get_encoder_diff() {
-	static unsigned char prev_encoder_counter = 0;
-	unsigned char encoder_counter = _encoder_counter;
-	char diff = encoder_counter - prev_encoder_counter;
+int8_t get_encoder_diff(void) {
+	static uint8_t prev_encoder_counter = 0;
+	uint8_t encoder_counter = _encoder_counter;
+	int8_t diff = (int8_t)(encoder_counter - prev_encoder_counter);
 	prev_encoder_counter = encoder_counter;
 	return diff;
 }
 
-void ad_init() {
+void ad_init(void) {
 	ADCON1 = 0b00001111; // All digital I/O
 //	ADCON1 = 0b00000000; // All analog I/O
 	ADCON2 = 0b00000010; // 0TAD, Fosc/32 (1.25 MHz)
@@ -296,7 +264,7 @@ void ad_init() {
 
 }
 
-void timer0_init() {
+void timer0_init(void) {
 	// Counter overflows at CLOCK_FREQ/4/256/2 times/s (every 51.2us)
 	T0CON = 0;
 	T0CONbits.T08BIT = 1;	// 8-bit timer
@@ -311,7 +279,7 @@ void timer0_init() {
 	INTCONbits.TMR0IE = 1;	// Enable interrupt
 }
 
-void timer1_init() {
+void timer1_init(void) {
 	_timer1_seconds = 0;
 
 	// Counter overflows at CLOCK_FREQ/4/65536/8 times/s (every 52.43ms)
@@ -329,7 +297,7 @@ void timer1_init() {
 	PIE1bits.TMR1IE = 1;	// Enable interrupt
 }
 
-void lvd_init() {
+void lvd_init(void) {
 	HLVDCONbits.VDIRMAG = 0; // Event when voltage below treshold
 	// LVD voltage of 4.33 V
 	HLVDCONbits.HLVDL3 = 1;
@@ -344,8 +312,7 @@ void lvd_init() {
 	PIE2bits.HLVDIE = 1;		// Enable interrupt
 }
 
-
-void isr_init() {
+void isr_init(void) {
 	/*Enable high and low priority interrupts */
 	RCONbits.IPEN = 1;	// Enable priority interrupts
 
@@ -361,7 +328,7 @@ void isr_init() {
 	INTCONbits.GIEL = 1;	// Enable low-prio interrupts
 }
 
-void spi_init()
+void spi_init(void)
 {
 	TRISCbits.TRISC3 = 0;	// SCK pin is output
 	TRISCbits.TRISC4 = 1;	// SDI pin is input
@@ -385,7 +352,7 @@ void spi_init()
 
 }
 
-unsigned char spi_wait_for_interrupt()
+uint8_t spi_wait_for_interrupt(void)
 {
 	while (PIR1bits.SSPIF == 0) {
 		if (SSPCON1bits.WCOL) {
@@ -395,7 +362,7 @@ unsigned char spi_wait_for_interrupt()
 	return 0;
 }
 
-unsigned char spi_rw(unsigned char val)
+uint8_t spi_rw(uint8_t val)
 {
 	SSPCON1bits.WCOL = 0; // Write collision detect bit
 	PIR1bits.SSPIF = 0; // SPI interrupt flag
@@ -404,9 +371,9 @@ unsigned char spi_rw(unsigned char val)
 	return SSPBUF; // Clears Buffer Full flag
 }
 
-void preampcontroller_init()
+void preampcontroller_init(void)
 {
-	unsigned char enter_hw_setup = 0;
+	uint8_t enter_hw_setup = 0;
 	signed char result;
 
 	// Disable unused peripherals
@@ -461,7 +428,7 @@ void preampcontroller_init()
 
 	isr_init();
 
-	preamp_init();					// State structure initilisation
+	preamp_init();					// State structure initialisation
 
 	result = load_settings();
 	lcd_init();
@@ -488,16 +455,16 @@ void preampcontroller_init()
 
 }
 
-void lcd_init()
+void lcd_init(void)
 {
-	unsigned char lcd_delay, lcd_width;
+	uint8_t lcd_delay, lcd_width;
 	char string[21];
 
-	lcd_delay = get_parameter(LCD_DELAY);
+	lcd_delay = (uint8_t)get_parameter(LCD_DELAY);
 	sprintf(string, "lcd-delay=%d", lcd_delay);
 	info(string);
 
-	lcd_width = get_parameter(LCD_WIDTH);
+	lcd_width = (uint8_t)get_parameter(LCD_WIDTH);
 	sprintf(string, "lcd-width=%d", lcd_width);
 	info(string);
 
@@ -572,7 +539,7 @@ void lcd_init()
 
 }
 
-void power_on()
+void power_on(void)
 {
 	POWER = 1;
 
@@ -595,7 +562,7 @@ void power_on()
 
 }
 
-void power_off()
+void power_off(void)
 {
 	LCD_display(preamp_name(), 0x00, 1, NONE);
 	LCD_display("power off...", 0x40, 0, INFO);
@@ -615,12 +582,12 @@ void power_off()
 
 }
 
-char button_power() {
+char button_power(void) {
 	if (!BUTTON_POWER) return 1;
 	else return 0;
 }
 
-char button_power_pressed() {
+char button_power_pressed(void) {
 	static char prev_button = 0;
 	char button = button_power();
 	if (button > prev_button) {		// Low->High transition
@@ -632,7 +599,7 @@ char button_power_pressed() {
 	}
 }
 
-char button_menu() {
+char button_menu(void) {
 	if (!BUTTON_MENU) return 1;
 	else return 0;
 }
@@ -649,12 +616,12 @@ char button_menu_pressed() {
 	}
 }
 
-char button_left() {
+char button_left(void) {
 	if (!BUTTON_LEFT) return 1;
 	else return 0;
 }
 
-char button_left_pressed() {
+char button_left_pressed(void) {
 	static char prev_button = 0;
 	char button = button_left();
 	if (button > prev_button) {		// Low->High transition
@@ -666,12 +633,12 @@ char button_left_pressed() {
 	}
 }
 
-char button_right() {
+char button_right(void) {
 	if (!BUTTON_RIGHT) return 1;
 	else return 0;
 }
 
-char button_right_pressed() {
+char button_right_pressed(void) {
 	static char prev_button = 0;
 	char button = button_right();
 	if (button > prev_button) {		// Low->High transition
@@ -683,12 +650,12 @@ char button_right_pressed() {
 	}
 }
 
-char button_select() {
+char button_select(void) {
 	if (!BUTTON_SELECT) return 1;
 	else return 0;
 }
 
-char button_select_pressed() {
+char button_select_pressed(void) {
 	static char prev_button = 0;
 	char button = button_select();
 	if (button > prev_button) {		// Low->High transition
@@ -700,7 +667,7 @@ char button_select_pressed() {
 	}
 }
 
-void EventHeadphonesHandler()
+void EventHeadphonesHandler(void)
 {
 	debug(1, "Headphones");
 
@@ -711,7 +678,7 @@ void EventHeadphonesHandler()
 	}
 }
 
-void EventPowerHandler()
+void EventPowerHandler(void)
 {
 	debug(1, "Power");
 
@@ -719,7 +686,7 @@ void EventPowerHandler()
 	else power_off();
 }
 
-void EventMenuHandler()
+void EventMenuHandler(void)
 {
 	debug(1, "Menu");
 
@@ -730,7 +697,7 @@ void EventMenuHandler()
 	}
 }
 
-void EventLeftHandler()
+void EventLeftHandler(void)
 {
 	debug(1, "Left");
 
@@ -741,7 +708,7 @@ void EventLeftHandler()
 	}
 }
 
-void EventRightHandler()
+void EventRightHandler(void)
 {
 	debug(1, "Right");
 
@@ -752,7 +719,7 @@ void EventRightHandler()
 	}
 }
 
-void EventSelectHandler()
+void EventSelectHandler(void)
 {
 	debug(1, "Select");
 
@@ -763,7 +730,7 @@ void EventSelectHandler()
 	}
 }
 
-void EventEncoderHandler()
+void EventEncoderHandler(void)
 {
 	signed char value = get_encoder_diff();
 
@@ -776,12 +743,12 @@ void EventEncoderHandler()
 	}
 }
 
-void EventInfraredHandler()
+void EventInfraredHandler(void)
 {
-	char received;
-	unsigned char address, command, same_codes;
+	int8_t received;
+	uint8_t address, command, same_codes;
 	char string[30];
-	unsigned char fast_volume_change_codes = 5;	// Change volume faster after receiving 5 same ir codes
+	uint8_t fast_volume_change_codes = 5;	// Change volume faster after receiving 5 same ir codes
 
 	debug(1, "Infrared");
 
@@ -811,7 +778,7 @@ void EventInfraredHandler()
 		else if (received == IR_VOLUME_UP) add_volume(1);
 		else if (received == IR_VOLUME_DOWN) add_volume(-1);
       else if (received == IR_AV) next_input();
-      else if (received >= IR_1 && received <= IR_9) set_input(received-IR_1);
+      else if (received >= IR_1 && received <= IR_9) set_input((uint8_t)(received-IR_1));
 		if (received == IR_MUTE) {
 			if (is_muted()) set_muted(0);
 			else set_muted(1);
@@ -823,7 +790,7 @@ void EventInfraredHandler()
 	}
 }
 
-void EventAutoPoweroffHandler()
+void EventAutoPoweroffHandler(void)
 {
 	const char name[] = "Auto power-off";
 
@@ -836,7 +803,7 @@ void EventAutoPoweroffHandler()
 	}
 }
 
-void EventDACHandler()
+void EventDACHandler(void)
 {
 	debug(1, "DAC");
 
@@ -846,24 +813,24 @@ void EventDACHandler()
 	}
 }
 
-void EventSignalLevelHandler()
+void EventSignalLevelHandler(void)
 {
 	char string[25];
-	unsigned char level, offset;
+	int8_t level, offset;
 
 	debug(1, "Signal level");
     if (!has_signal_level()) return;
 
 	if (is_powered()) {
-		level = 10*get_signal_level();
-		offset = 10*get_signal_offset();
+		level = (int8_t)(10*get_signal_level());
+		offset = (int8_t)(10*get_signal_offset());
 		sprintf(string, "S=%d O=%d", level, offset);
 		debug(3, string);
 		display_input(0);
 	}
 }
 
-void EventUARTHandler()
+void EventUARTHandler(void)
 {
 	debug(1, "UART");
 
@@ -871,14 +838,14 @@ void EventUARTHandler()
 	term_handle_command();
 }
 
-void EventDisplayTitleHandler()
+void EventDisplayTitleHandler(void)
 {
 	debug(1, "Display Title event");
 
 	display_title();
 }
 
-void main() {
+void main(void) {
 
 	preampcontroller_init();
 

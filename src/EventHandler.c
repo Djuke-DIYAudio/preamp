@@ -61,19 +61,19 @@ void EventManager(void)
         EventID = GetFirstEvent();
 
         /* Process any event handlers */
-	if (EventID) {
-		for(i=0;i<nrTasks;i++) {
-			pActiveTask = &mpTaskList[i];
-			if(pActiveTask->EventHandler != NULL && pActiveTask->EventID == EventID)
-			{
-				/* Call the task's event handler function */
-				(pActiveTask->EventHandler)();
-		
-			}
-				}
-		/* All handlers checked, clear the event */
-		ClearFirstEvent();
-	}
+        if (EventID) {
+            for(i=0;i<nrTasks;i++) {
+                pActiveTask = &mpTaskList[i];
+                if(pActiveTask->EventHandler != NULL && pActiveTask->EventID == EventID)
+                {
+                    /* Call the task's event handler function */
+                    (pActiveTask->EventHandler)();
+
+                }
+                    }
+            /* All handlers checked, clear the event */
+            ClearFirstEvent();
+        }
     }
 }
 

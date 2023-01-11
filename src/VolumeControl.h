@@ -1,8 +1,10 @@
 #ifndef VOLUMECONTROL_H
 #define VOLUMECONTROL_H
 
-// Type definitions
+#include <stdint.h>
+#include <stdbool.h>
 
+// Type definitions
 enum VC_TYPE {
     VC_NORMAL = 0,  // normal version of VolumeControl pcb
     VC_8CH = 1,     // 8-channel version of VolumeControl pcb
@@ -34,48 +36,43 @@ enum CHANNEL_MODE {
 };
 
 // Function definitions
-void volumecontrol_init(unsigned char type);
-short volumecontrol_limit(short input, short min, short max);
-
-void volumecontrol_set_hafler(unsigned char mode);
+void volumecontrol_init(uint8_t type);
+int16_t volumecontrol_limit(int16_t input, int16_t min, int16_t max);
+void volumecontrol_set_hafler(uint8_t mode);
 
 // Channel related functions
-const char *volumecontrol_channel_name_string(unsigned char channel);
-const char *volumecontrol_channel_string(unsigned char channels);
-unsigned char volumecontrol_channel_in_use(unsigned char channel);
-unsigned char volumecontrol_get_nr_output_channels();
-unsigned char volumecontrol_get_nr_channels();
-
-void volumecontrol_set_volume(short volume_half_db);
-void volumecontrol_mute();
-void volumecontrol_unmute();
+const char *volumecontrol_channel_name_string(uint8_t channel);
+const char *volumecontrol_channel_string(uint8_t channels);
+bool volumecontrol_channel_in_use(uint8_t channel);
+uint8_t volumecontrol_get_nr_output_channels(void);
+uint8_t volumecontrol_get_nr_channels(void);
+void volumecontrol_set_volume(int16_t volume_half_db);
+void volumecontrol_mute(void);
+void volumecontrol_unmute(void);
 
 // Internal
-static void volumecontrol_mute_master1();
-static void volumecontrol_unmute_master1();
-static void volumecontrol_mute_master2();
-static void volumecontrol_unmute_master2();
-static void volumecontrol_mute_master3();
-static void volumecontrol_unmute_master3();
+static void volumecontrol_mute_master1(void);
+static void volumecontrol_unmute_master1(void);
+static void volumecontrol_mute_master2(void);
+static void volumecontrol_unmute_master2(void);
+static void volumecontrol_mute_master3(void);
+static void volumecontrol_unmute_master3(void);
 static void volumecontrol_set_master1_volume(short volume_half_db);
 static void volumecontrol_set_master2_volume(short volume_half_db);
 static void volumecontrol_set_master3_volume(short volume_half_db);
-static unsigned char volumecontrol_use_subwoofer();
-static unsigned char volumecontrol_use_center();
-static unsigned char volumecontrol_use_rear();
-
-void volumecontrol_set_channel_offset(unsigned char channel, short offset_half_db);
-short volumecontrol_get_channel_offset(unsigned char channel);
-void volumecontrol_mute_channel(unsigned char channel);
-void volumecontrol_unmute_channel(unsigned char channel);
-
-void volumecontrol_set_input_mode(unsigned char input_mode);
-void volumecontrol_set_output_mode(unsigned char output_mode);
-unsigned char volumecontrol_get_output_mode();
-unsigned char volumecontrol_next_output_mode();
-
-unsigned char volumecontrol_is_hafler_mode();
-unsigned char volumecontrol_has_signal_level();
-unsigned char volumecontrol_has_headphones();
+static bool volumecontrol_use_subwoofer(void);
+static bool volumecontrol_use_center(void);
+static bool volumecontrol_use_rear(void);
+void volumecontrol_set_channel_offset(uint8_t channel, int8_t offset_half_db);
+int8_t volumecontrol_get_channel_offset(uint8_t channel);
+void volumecontrol_mute_channel(uint8_t channel);
+void volumecontrol_unmute_channel(uint8_t channel);
+void volumecontrol_set_input_mode(uint8_t input_mode);
+void volumecontrol_set_output_mode(uint8_t output_mode);
+uint8_t volumecontrol_get_output_mode(void);
+uint8_t volumecontrol_next_output_mode(void);
+bool volumecontrol_is_hafler_mode(void);
+bool volumecontrol_has_signal_level(void);
+bool volumecontrol_has_headphones(void);
 
 #endif
