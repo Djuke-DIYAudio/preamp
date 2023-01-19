@@ -136,7 +136,7 @@ void tmr1_handler(void)
    if (encoder_counter_changed()) TriggerEvent(EVENT_ENCODER);
 	if (is_powered()) {
 	   if (headphones_connected_changed()) TriggerEvent(EVENT_HP);
-	   if (is_dac_input() && dac_input_changed()) TriggerEvent(EVENT_DAC);
+	   if (is_dac_input()) TriggerEvent(EVENT_DAC);
 	   if (signal_level_changed()) TriggerEvent(EVENT_SIGNAL_LEVEL);
    }
 
@@ -805,9 +805,8 @@ void EventAutoPoweroffHandler(void)
 
 void EventDACHandler(void)
 {
-	debug(1, "DAC");
-
-	if (is_powered()) {
+	if (is_powered() && dac_update()) {
+    	debug(1, "DAC");
 		update_volume();
 		display_input(0);
 	}

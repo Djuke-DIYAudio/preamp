@@ -70,12 +70,12 @@ volatile char _term_buf_busy = 0;
 uint8_t term_bytes_received(void) { return _term_bytes_received; }
 
 void info(const char *str) { printf("[INFO]:%s\n", str); }
-void warning(const char *str) { printf("[WARNING]:%s\n", str); }
+void warning(const char *str) { printf("[WARN]:%s\n", str); }
 void error(const char *str) { printf("[ERROR]:%s\n", str); }
 void debug(uint8_t db_level, const char *str) {
    if (_term_debug_level >= db_level) {
       if (db_level == 1) printf("[EVENT]:%s\n", str);
-      else printf("[DEBUG]:%s\n", str);
+      else printf("[DB%d]:%s\n", db_level, str);
    }
 }
 void syntax(const char *cmd, const char *str) { printf("[SYNTAX]: %s %s\n", cmd, str); }
