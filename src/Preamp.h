@@ -141,7 +141,7 @@ enum NAME {
 };
 
 enum TYPE {
-	ANALOG1 = 1,
+	ANALOG1 = 0,
 	ANALOG2,
 	ANALOG3,
 	ANALOG4,

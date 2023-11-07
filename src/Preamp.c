@@ -20,7 +20,7 @@ volatile settings_t _settings;
 // Preamp info
 const char *preamp_name(void) { return "Djuke PreAmplifier"; }
 const char *preamp_version(void) { return "v1.4"; }
-const char *preamp_date(void) { return "11 jan 2023"; }
+const char *preamp_date(void) { return "7 nov 2023"; }
 
 // Input names
 const char input_names[][13] =
