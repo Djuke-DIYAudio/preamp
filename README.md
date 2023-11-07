@@ -60,6 +60,41 @@ make clean
 
 ## Changelog
 
+### version 1.4
+Release date: 2023-11-07
+- Move from SDCC to XC8 with major flash size reduction
+- Move DAC handling from interrupt to main loop
+- Increase max title size to 80 characters
+
+### version 1.3
+Release date: 2021-07-02
+- Reduce sensitivity of encoder in HW setup
+- Input names in alphabetic order
+- Fix title display in menu
+- Make (un)signed datatypes explicit to allow compilation with recent SDCC
+- Fix mute state during power on
+
+### version 1.2
+Release date: 2020-04-13
+- Increased speed of title scrolling to about 4 characters/s
+- Limited max master 1/2/3 volume to +3dB
+
+### version 1.1
+Release date: 2016-12-21
+- Python script now python3 compatible
+- Added 'spare' to list of inputs
+- Defined input names as array to save space
+
+### version 1.0
+Release date: 2016-04-18
+- Added makefile for compiling from command line
+- Added new style configuration bits
+- Handle UART at high priority
+- Set title only for specific input
+- Added python tools for integration with Volumio/Rune
+- Improved debug mechanism
+- Switch on power to have backlight in hardware setup menu
+
 ### version 0.9
 Release date: 2016-02-15
 - Interrupt based infrared
@@ -79,31 +114,4 @@ Release date: 2016-02-15
 - Display title from UART
 - Increased number of DAC inputs to 5 (to be used by Raspberry Pi)
 
-### version 1.0
-Release date: 2016-04-18
-- Added makefile for compiling from command line
-- Added new style configuration bits
-- Handle UART at high priority
-- Set title only for specific input
-- Added python tools for integration with Volumio/Rune
-- Improved debug mechanism
-- Switch on power to have backlight in hardware setup menu
 
-### version 1.1
-Release date: 2016-12-21
-- Python script now python3 compatible
-- Added 'spare' to list of inputs
-- Defined input names as array to save space
-
-### version 1.2
-Release date: 2020-04-13
-- Increased speed of title scrolling to about 4 characters/s
-- Limited max master 1/2/3 volume to +3dB
-
-### version 1.3
-Release date: 2021-07-02
-- Reduce sensitivity of encoder in HW setup
-- Input names in alphabetic order
-- Fix title display in menu
-- Make (un)signed datatypes explicit to allow compilation with recent SDCC
-- Fix mute state during power on
