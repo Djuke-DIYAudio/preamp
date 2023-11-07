@@ -66,6 +66,8 @@ Release date: 2023-11-07
 - Move DAC handling from interrupt to main loop
 - Increase max title size to 80 characters
 
+IMPORTANT: If you use UnixTinyBootLoaderLoader to update the firmware make sure to use at least utbll v1.1 as this fixes issues with hex files consisting of multiple chunks
+
 ### version 1.3
 Release date: 2021-07-02
 - Reduce sensitivity of encoder in HW setup
