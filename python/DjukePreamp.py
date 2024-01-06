@@ -91,8 +91,8 @@ try:
         if status == 'play':
             # Convert title to ascii, while trying to maintain readable titles
             title = unicodedata.normalize("NFD", new_title).encode('ascii', 'ignore')
-            # Truncate to max 34 characters
-            title = title[:34]
+            # Truncate to max 70 characters
+            title = title[:70]
             print('title_changed(): ' + title)
             logger.info('title_changed(): ' + title)
             logger.info("Set preamp title to: " + title)
