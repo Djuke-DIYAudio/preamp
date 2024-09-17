@@ -44,7 +44,7 @@ class PreampClient(object):
             self.version()
 
     def close(self):
-	self._stop_thread = True
+        self._stop_thread = True
         time.sleep(1)
         self._ser.close()
         

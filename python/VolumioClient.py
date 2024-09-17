@@ -3,14 +3,14 @@
 # Class for connecting to Volumio and retrieving its playback status.
 # You can define callback function that are called on a change of status, title, artist
 #
-# Uses socketIO-client for connecting to Volumio and retrieving the status: https://pypi.org/project/socketIO-client/
+# Uses python-socketio for connecting to Volumio and retrieving the status: https://pypi.org/project/python-socketio/
+#
 
-from socketIO_client import SocketIO, LoggingNamespace
+import socketio
 
 class VolumioClient(object):
-    def __init__(self, host="localhost", port=3000):
-        self._host = host
-        self._port = port
+    def __init__(self, url="http://localhost:3000"):
+        self._url = url
         self._status = ''
         self._title = ''
         self._artist = ''
@@ -31,13 +31,13 @@ class VolumioClient(object):
     # Callback function as response on 'getState', used to retrieve status, title, artist
     def on_push_state(self, *args):
 #        print('getstate', args)
-        if 'status' in args[0]:
+        if 'status' in args[0] and type(args[0]['status']) is str:
             new_status = args[0]['status']
             if new_status != self._status:
                 if self._status_change_callback:
                     self._status_change_callback(new_status)
                 self._status = new_status
-        if 'title' in args[0]:
+        if 'title' in args[0] and type(args[0]['title']) is str:
             new_title = args[0]['title']
             if new_title != self._title:
                 if self._title_change_callback:
@@ -46,7 +46,7 @@ class VolumioClient(object):
             # Set empty title when playback is stopped to ensure also title callback is triggered when it starts again
             if self._status != 'play':
                 self._title = ''
-        if 'artist' in args[0]:
+        if 'artist' in args[0] and type(args[0]['artist']) is str:
             new_artist = args[0]['artist']
             if new_artist != self._artist:
                 if self._artist_change_callback:
@@ -54,7 +54,8 @@ class VolumioClient(object):
                 self._artist = new_artist
 
     def connect(self):
-        self._socketio = SocketIO(self._host, self._port, LoggingNamespace)
+        self._socketio = socketio.Client()
+        self._socketio.connect(self._url, transports=['websocket'])
 
         # getState response handler
         self._socketio.on('pushState', self.on_push_state)
@@ -83,7 +84,7 @@ if __name__ == "__main__":
         print('artist_changed(): ' + artist)
 
     try:
-        volumio = VolumioClient(host="mediaplayer", port=3000)
+        volumio = VolumioClient(url="http://localhost:3000")
         volumio.on_status_change(status_changed)
         volumio.on_title_change(title_changed)
         volumio.on_artist_change(artist_changed)

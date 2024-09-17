@@ -13,12 +13,13 @@
 # To install it on the Volumio raspbian distribution, connect using ssh to it and run these commands:
 #
 # (sudo apt-get update)
-# sudo apt-get install python-pip
-# sudo pip install python-SocketIO-client
+# sudo apt-get install python3-pip
+# sudo pip3 install websocket-client
+# sudo pip3 install python-socketio
 #
 # The connection to the Djuke preamplifier uses python-serial, if it is not already installed, install it with
 #
-# sudo apt-get install python-serial
+# sudo apt-get install python3-serial
 # 
 
 import time
@@ -90,7 +91,7 @@ try:
         global status, title
         if status == 'play':
             # Convert title to ascii, while trying to maintain readable titles
-            title = unicodedata.normalize("NFD", new_title).encode('ascii', 'ignore')
+            title = new_title.encode('ascii', 'ignore').decode()
             # Truncate to max 70 characters
             title = title[:70]
             print('title_changed(): ' + title)
@@ -99,7 +100,7 @@ try:
             preamp.write("title 9 " + title)
 
     # define volumio client with callback functions
-    volumio = VolumioClient(host="localhost", port=3000)
+    volumio = VolumioClient("http://localhost:3000")
     volumio.on_status_change(status_changed)
     volumio.on_title_change(title_changed)
     volumio.connect()
