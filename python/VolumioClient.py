@@ -37,12 +37,17 @@ class VolumioClient(object):
                 if self._status_change_callback:
                     self._status_change_callback(new_status)
                 self._status = new_status
+
+                # Set empty title when playback is stopped to ensure also title callback is triggered when it starts again
+                if new_status != 'play':
+                    self._title = ''
         if 'title' in args[0] and type(args[0]['title']) is str:
             new_title = args[0]['title']
             if new_title != self._title:
                 if self._title_change_callback:
                     self._title_change_callback(new_title)
                 self._title = new_title
+
             # Set empty title when playback is stopped to ensure also title callback is triggered when it starts again
             if self._status != 'play':
                 self._title = ''
@@ -53,17 +58,26 @@ class VolumioClient(object):
                     self._artist_change_callback(new_artist)
                 self._artist = new_artist
 
+    def on_connect(self):
+        print("Connected to", self._url)
+
+    def on_disconnect(self):
+        print("Disconnected from", self._url)
+
     def connect(self):
-        self._socketio = socketio.Client()
+        self._socketio = socketio.Client(logger=False)
+
+        # Response handlers
+        self._socketio.on('connect', self.on_connect)
+        self._socketio.on('disconnect', self.on_disconnect)
+        self._socketio.on('pushState', self.on_push_state)
+
         self._socketio.connect(self._url, transports=['websocket'])
 
-        # getState response handler
-        self._socketio.on('pushState', self.on_push_state)
+    def wait(self):
         # getState command
         self._socketio.emit('getState')
-
-    def wait(self):
-    	self._socketio.wait()
+        self._socketio.sleep(10)
 
 if __name__ == "__main__":
     import sys
